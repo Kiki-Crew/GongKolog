@@ -20,26 +20,28 @@
 
 ```
 .
-├── backend/          # FastAPI 분석 엔진 (→ backend/README.md)
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── config.py
-│   │   ├── models/
-│   │   ├── services/     # llm, embedding, analyzer, prompts
-│   │   ├── db/
-│   │   └── api/          # routes, deps
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/         # React + Vite
-│   ├── src/
-│   │   ├── pages/        # Landing, Analyze, Result, MyPage, Share
-│   │   ├── components/   # SplitView
-│   │   ├── lib/          # api, supabase, useAuth, dummy
-│   │   └── types/
-│   ├── package.json
-│   └── .env.example
+├── backend/                # FastAPI 분석 엔진 (→ backend/README.md)
+│   └── app/
+│       ├── main.py         # 앱·CORS·라우터·lifespan(BGE-M3)
+│       ├── config.py
+│       ├── api/            # 라우트 (analyze, cover_letters, job_postings)
+│       ├── schemas/        # Pydantic 계약 (analysis.py)
+│       ├── core/           # 엔진: llm, prompts, extract, sentences,
+│       │                   #       embedding, judge, pipeline, utils
+│       ├── services/       # DB 계층: supabase_client, analyses, ...
+│       └── auth/           # dependencies (JWT)
+├── frontend/               # React + Vite
+│   └── src/
+│       ├── pages/          # Landing, Analyze, Result, MyPage, Share
+│       ├── components/     # result/(SplitView 등), auth/, common/
+│       ├── hooks/          # useAuth, useAnalyze
+│       ├── lib/            # api, supabase
+│       ├── types/          # analysis.ts
+│       └── mock/           # sampleResponse.ts
 └── supabase/
-    └── schema.sql    # 테이블 + RLS + 트리거
+    ├── schema.sql          # 테이블
+    ├── policies.sql        # RLS 정책
+    └── triggers.sql        # 가입 시 profiles 자동 생성
 ```
 
 ## 데이터 흐름

@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import GoogleLoginButton from "../components/auth/GoogleLoginButton";
+import Spinner from "../components/common/Spinner";
+import { useAuth, signOut } from "../hooks/useAuth";
 import { listAnalyses } from "../lib/api";
-import { signInWithGoogle, signOut, useAuth } from "../lib/useAuth";
-import type { AnalysisHistoryItem } from "../types";
+import type { AnalysisHistoryItem } from "../types/analysis";
 
 export default function MyPage() {
   const { session, loading } = useAuth();
@@ -14,18 +16,13 @@ export default function MyPage() {
     if (session) listAnalyses().then(setHistory).catch(() => setHistory([]));
   }, [session]);
 
-  if (loading) return <p className="text-gray-400">불러오는 중...</p>;
+  if (loading) return <Spinner />;
 
   if (!session) {
     return (
       <div className="flex flex-col items-center gap-4 py-20">
         <p>로그인하면 자소서·공고 저장과 분석 기록을 볼 수 있습니다.</p>
-        <button
-          onClick={() => signInWithGoogle()}
-          className="rounded-lg bg-nano-primary px-6 py-3 font-semibold hover:bg-nano-accent"
-        >
-          Google로 로그인
-        </button>
+        <GoogleLoginButton />
       </div>
     );
   }

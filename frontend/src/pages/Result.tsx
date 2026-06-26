@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
-import SplitView from "../components/SplitView";
+import Spinner from "../components/common/Spinner";
+import SplitView from "../components/result/SplitView";
 import { getAnalysis } from "../lib/api";
-import type { AnalyzeResponse } from "../types";
+import type { AnalyzeResponse } from "../types/analysis";
 
 export default function Result() {
   const { id } = useParams();
@@ -20,6 +21,6 @@ export default function Result() {
     }
   }, [id, result]);
 
-  if (!result) return <p className="text-gray-400">결과를 불러오는 중...</p>;
+  if (!result) return <Spinner label="결과를 불러오는 중..." />;
   return <SplitView result={result} />;
 }

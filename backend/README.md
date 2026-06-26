@@ -15,25 +15,36 @@ uvicorn app.main:app --reload --port 8000
 
 > 첫 실행 시 BGE-M3 모델(~2GB)을 다운로드한다. lifespan에서 1회만 로딩.
 
-## 구조
+## 레이어 구조
+
+요청은 `api`(라우트) → `core`(분석 엔진) / `services`(DB) 한 방향으로 흐른다.
 
 ```
 app/
-  main.py              # FastAPI 진입점, lifespan에서 BGE-M3 로딩, CORS, 라우터
-  config.py            # .env 설정
-  models/schemas.py    # Pydantic (요청/응답)
-  services/
-    llm.py             # 멀티 LLM 호출 + 폴백 (Groq/Gemini)
-    embedding.py       # BGE-M3 임베딩 + 후보 검색
-    prompts.py         # 추출/판정 프롬프트
-    analyzer.py        # 분석 파이프라인 (추출→문장분리→임베딩→판정→조립)
-  db/supabase_client.py # service_role 클라이언트
-  api/
-    deps.py            # JWT 인증 의존성
-    routes/
-      analyze.py       # POST /api/analyze
-      analyses.py      # GET /api/analyses, /api/analyses/{id}
-      documents.py     # 자소서/공고 CRUD (라우터 팩토리)
+  main.py              # FastAPI 앱, CORS, 라우터 등록, lifespan(BGE-M3 로딩)
+  config.py            # 환경변수(pydantic-settings), 모델명 상수
+  api/                 # 라우터 — 엔드포인트 정의만, 로직은 core/services로 위임
+    analyze.py         # POST /api/analyze, GET /api/analyses/{id}, GET /api/analyses
+    cover_letters.py   # POST/GET/DELETE /api/cover-letters
+    job_postings.py    # POST/GET/DELETE /api/job-postings
+  schemas/
+    analysis.py        # Status, AnalyzeRequest/Response, Requirement, Summary ...
+  core/                # ── 분석 엔진 (스펙 4장) ──
+    llm.py             # call_llm / call_with_fallback (Gemini+Groq)
+    prompts.py         # EXTRACT_PROMPT, JUDGE_PROMPT
+    extract.py         # 1단계: 요구사항 추출
+    sentences.py       # 2단계: kss 문장 분리 + id 부여
+    embedding.py       # 3단계: BGE-M3 임베딩 + 코사인 후보 검색
+    judge.py           # 4단계: 판정 + build_judge_input
+    pipeline.py        # 5단계: analyze() 전체 조립
+    utils.py           # safe_json 등 파싱 헬퍼
+  services/            # DB 접근 계층 (Supabase service_role 경유)
+    supabase_client.py # supabase-py 싱글톤
+    analyses.py        # 분석 결과 저장/조회
+    cover_letters.py   # (내부 _documents.py 공유)
+    job_postings.py
+  auth/
+    dependencies.py    # Supabase JWT 검증 → user_id 추출 (Depends)
 ```
 
 ## 엔드포인트

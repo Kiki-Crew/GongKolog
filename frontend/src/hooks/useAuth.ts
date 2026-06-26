@@ -1,8 +1,8 @@
-// Supabase 세션 훅 + Google OAuth 로그인/로그아웃 (스펙 7.5)
+// Supabase 세션 관리 훅 + Google OAuth (스펙 7.5)
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-import { supabase } from "./supabase";
+import { supabase } from "../lib/supabase";
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);

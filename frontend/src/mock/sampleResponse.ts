@@ -1,8 +1,8 @@
-// 더미 응답 (백엔드 연결 전 프론트 독립 개발용 — 스펙 8장 Day 2~3)
-import type { AnalyzeResponse } from "../types";
+// 더미 JSON (백과 독립 개발용 — 스펙 Day2~3)
+import type { AnalyzeResponse } from "../types/analysis";
 
-export const DUMMY_RESULT: AnalyzeResponse = {
-  analysis_id: "dummy-0000",
+export const SAMPLE_RESPONSE: AnalyzeResponse = {
+  analysis_id: "sample-0000",
   summary: { total: 8, met: 5, weak: 2, missing: 1, coverage_score: 0.75 },
   cover_letter_sentences: [
     { id: "s1", text: "저는 스위프트로 앱을 출시한 경험이 있습니다." },

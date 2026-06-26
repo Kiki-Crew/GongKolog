@@ -6,6 +6,7 @@ import Analyze from "./pages/Analyze";
 import Result from "./pages/Result";
 import MyPage from "./pages/MyPage";
 import Share from "./pages/Share";
+// NOTE: 라우트는 스펙 7.2 기준
 
 export default function App() {
   return (

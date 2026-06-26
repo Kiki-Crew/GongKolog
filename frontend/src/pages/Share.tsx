@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import SplitView from "../components/SplitView";
+import Spinner from "../components/common/Spinner";
+import SplitView from "../components/result/SplitView";
 import { getAnalysis } from "../lib/api";
-import type { AnalyzeResponse } from "../types";
+import type { AnalyzeResponse } from "../types/analysis";
 
 export default function Share() {
   const { id } = useParams();
@@ -14,7 +15,7 @@ export default function Share() {
     if (id) getAnalysis(id).then(setResult).catch(() => setResult(null));
   }, [id]);
 
-  if (!result) return <p className="text-gray-400">결과를 불러오는 중...</p>;
+  if (!result) return <Spinner label="결과를 불러오는 중..." />;
   return (
     <div>
       <p className="mb-4 text-sm text-gray-400">공유된 진단 결과입니다.</p>

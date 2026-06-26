@@ -9,10 +9,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import analyses, analyze
-from app.api.routes.documents import cover_letters_router, job_postings_router
+from app.api import analyze, cover_letters, job_postings
 from app.config import settings
-from app.services import embedding
+from app.core import embedding
 
 
 @asynccontextmanager
@@ -37,9 +36,8 @@ app.add_middleware(
 )
 
 app.include_router(analyze.router)
-app.include_router(analyses.router)
-app.include_router(cover_letters_router)
-app.include_router(job_postings_router)
+app.include_router(cover_letters.router)
+app.include_router(job_postings.router)
 
 
 @app.get("/health")

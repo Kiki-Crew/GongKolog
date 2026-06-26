@@ -2,30 +2,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { analyze } from "../lib/api";
+import Button from "../components/common/Button";
+import { useAnalyze } from "../hooks/useAnalyze";
 
 export default function Analyze() {
   const [jobPosting, setJobPosting] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { run, loading, error } = useAnalyze();
   const navigate = useNavigate();
 
   async function onSubmit() {
-    if (!jobPosting.trim() || !coverLetter.trim()) {
-      setError("공고와 자소서를 모두 입력하세요.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await analyze(jobPosting, coverLetter);
+    const result = await run(jobPosting, coverLetter);
+    if (result) {
       // 결과는 백엔드가 저장 → id로 결과 페이지 이동
       navigate(`/result/${result.analysis_id}`, { state: result });
-    } catch (e) {
-      setError("분석에 실패했습니다. 잠시 후 다시 시도하세요.");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -47,13 +37,9 @@ export default function Analyze() {
         />
       </div>
       {error && <p className="text-missing">{error}</p>}
-      <button
-        onClick={onSubmit}
-        disabled={loading}
-        className="self-start rounded-lg bg-nano-primary px-6 py-3 font-semibold hover:bg-nano-accent disabled:opacity-50"
-      >
+      <Button onClick={onSubmit} disabled={loading} className="self-start">
         {loading ? "분석 중..." : "진단하기"}
-      </button>
+      </Button>
       {/* TODO: 로그인 시 저장된 자소서/공고 불러오기 (스펙 1.4) */}
     </div>
   );

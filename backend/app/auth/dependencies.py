@@ -1,6 +1,6 @@
-"""인증 의존성 — Supabase JWT 검증 → user_id 추출 (스펙 6장)."""
+"""Supabase JWT 검증 → user_id 추출 (FastAPI Depends, 스펙 6장)."""
 import jwt
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Header, HTTPException, status
 
 from app.config import settings
 

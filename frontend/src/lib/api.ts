@@ -7,7 +7,7 @@ import type {
   AnalysisHistoryItem,
   AnalyzeResponse,
   SavedDocument,
-} from "../types";
+} from "../types/analysis";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
