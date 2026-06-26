@@ -1,9 +1,12 @@
 """4단계 — 충족 판정 + 입력 빌더 (스펙 4.4).
 
 Gemini 우선(한국어 추론), 실패 시 Groq 폴백.
+settings.mock_llm=true 면 유사도 임계값 기반 mock 판정 (키 불필요).
 """
 import json
 
+from app.config import settings
+from app.core import mock
 from app.core.llm import call_with_fallback
 from app.core.prompts import JUDGE_PROMPT
 from app.core.utils import safe_json
@@ -26,6 +29,9 @@ def build_judge_input(requirements: list[dict], candidates: dict) -> str:
 
 
 def judge(requirements: list[dict], candidates: dict) -> list[dict]:
+    if settings.mock_llm:
+        return mock.mock_judge(requirements, candidates)
+
     prompt = JUDGE_PROMPT.format(judge_input=build_judge_input(requirements, candidates))
     try:
         return safe_json(call_with_fallback(prompt, primary="gemini", backup="groq"))

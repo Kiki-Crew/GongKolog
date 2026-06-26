@@ -2,8 +2,13 @@
 
 모델은 main.py lifespan에서 1회 로딩 후 set_model()로 주입.
 벡터DB 불필요 — 문장 수십 개라 numpy 행렬곱 한 방.
+
+settings.mock_embedding=true 면 BGE-M3 대신 문자 n-gram Jaccard 유사도 사용
+(2GB 모델 다운로드 없이 파이프라인 검증 — 스펙 8장 Tier 1).
+numpy는 지연 import.
 """
-import numpy as np
+from app.config import settings
+from app.core import mock
 
 _model = None
 
@@ -20,14 +25,21 @@ def get_model():
     return _model
 
 
-def embed(texts: list[str]) -> np.ndarray:
+def embed(texts: list[str]):
+    import numpy as np  # noqa: F401  (정규화 옵션이 내적=코사인 보장)
+
     # 정규화 → 내적 = 코사인 유사도
     return get_model().encode(texts, normalize_embeddings=True)
 
 
 def find_candidates(requirements: list[dict], sentences: list[dict], top_k: int = 3) -> dict:
+    if settings.mock_embedding:
+        return mock.mock_find_candidates(requirements, sentences, top_k)
+
     if not sentences:
         return {r["id"]: [] for r in requirements}
+
+    import numpy as np
 
     req_vecs = embed([r["text"] for r in requirements])
     sent_vecs = embed([s["text"] for s in sentences])

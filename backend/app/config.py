@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     embed_model: str = "BAAI/bge-m3"
     embed_device: str = "cpu"
 
+    # Mock 모드 (키/모델 없이 파이프라인 검증용 — 스펙 8장 Tier 1)
+    #   MOCK_LLM=true       → LLM 호출 대신 규칙 기반 가짜 추출/판정
+    #   MOCK_EMBEDDING=true → BGE-M3 대신 문자 n-gram Jaccard 유사도
+    mock_llm: bool = False
+    mock_embedding: bool = False
+
     # CORS
     frontend_origin: str = "http://localhost:5173"
 

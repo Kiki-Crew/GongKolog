@@ -15,6 +15,19 @@ uvicorn app.main:app --reload --port 8000
 
 > 첫 실행 시 BGE-M3 모델(~2GB)을 다운로드한다. lifespan에서 1회만 로딩.
 
+## 스모크 테스트 (키 없이 파이프라인 검증)
+
+키·모델 없이 mock 모드로 `analyze()`를 끝에서 끝까지 1회 돌리고 응답 스키마를 검증한다:
+
+```bash
+cd backend
+MOCK_LLM=true MOCK_EMBEDDING=true python scripts/smoke_test.py
+```
+
+- `MOCK_LLM=true` → LLM 호출 대신 규칙 기반 추출/판정
+- `MOCK_EMBEDDING=true` → BGE-M3 대신 문자 n-gram Jaccard 유사도
+- 실제 LLM으로 돌리려면 `.env`에 키 채우고 `MOCK_*=false`
+
 ## 레이어 구조
 
 요청은 `api`(라우트) → `core`(분석 엔진) / `services`(DB) 한 방향으로 흐른다.
