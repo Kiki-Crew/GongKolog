@@ -20,7 +20,24 @@ os.environ.setdefault("MOCK_EMBEDDING", "true")
 # backend/ 를 import 경로에 추가
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.config import settings  # noqa: E402
+from app.core import embedding  # noqa: E402
 from app.core.pipeline import analyze  # noqa: E402
+
+
+def ensure_embed_model() -> None:
+    """실제 임베딩 모드면 BGE-M3를 직접 로딩 (서버 lifespan 밖에서 실행되므로).
+
+    mock_embedding=true 면 모델이 필요 없으니 건너뛴다.
+    """
+    if settings.mock_embedding:
+        return
+    from sentence_transformers import SentenceTransformer
+
+    print(f"BGE-M3 로딩 중... ({settings.embed_model}, 첫 실행 시 ~2GB 다운로드)")
+    model = SentenceTransformer(settings.embed_model, device=settings.embed_device)
+    embedding.set_model(model)
+    print("로딩 완료.\n")
 
 JOB_POSTING = """[채용공고] iOS 개발자
 - iOS 앱 개발 및 출시 경험
@@ -77,6 +94,7 @@ def validate(result: dict) -> list[str]:
 
 
 def main() -> int:
+    ensure_embed_model()
     result = analyze(JOB_POSTING, COVER_LETTER)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     print("\n" + "=" * 50)
