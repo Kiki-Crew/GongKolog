@@ -13,9 +13,20 @@ import json
 import os
 import sys
 
-# settings 인스턴스화 전에 mock 강제 (인자 없이 실행해도 mock으로)
-os.environ.setdefault("MOCK_LLM", "true")
-os.environ.setdefault("MOCK_EMBEDDING", "true")
+# 모드 선택 (config 임포트 전에 결정해야 함):
+#   python scripts/smoke_test.py mock   → 강제 mock (키/모델 불필요)
+#   python scripts/smoke_test.py real   → 강제 real  (.env 키 필요)
+#   python scripts/smoke_test.py        → .env / 환경변수 설정 그대로 사용
+#
+# 주의: 인자 없을 땐 os.environ을 건드리지 않는다. (건드리면 .env 값을 덮어써서
+#       MOCK_LLM=false로 둬도 mock으로 도는 함정이 생김 — env > .env 우선순위 때문)
+_mode = sys.argv[1].lower() if len(sys.argv) > 1 else None
+if _mode == "mock":
+    os.environ["MOCK_LLM"] = "true"
+    os.environ["MOCK_EMBEDDING"] = "true"
+elif _mode == "real":
+    os.environ["MOCK_LLM"] = "false"
+    os.environ["MOCK_EMBEDDING"] = "false"
 
 # backend/ 를 import 경로에 추가
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -119,6 +130,14 @@ def validate(result: dict) -> list[str]:
 
 
 def main() -> int:
+    mode = "MOCK" if settings.mock_llm else "REAL(LLM)"
+    emb = "mock" if settings.mock_embedding else "BGE-M3"
+    print(f"▶ 모드: LLM={mode}, 임베딩={emb}\n")
+    if settings.mock_llm:
+        print("⚠️  지금은 mock 판정입니다. 실제 품질을 보려면:")
+        print("    MOCK_LLM=false MOCK_EMBEDDING=false python scripts/smoke_test.py")
+        print("    (또는: python scripts/smoke_test.py real)\n")
+
     ensure_embed_model()
     result = analyze(JOB_POSTING, ITEMS)
     print(json.dumps(result, ensure_ascii=False, indent=2))
