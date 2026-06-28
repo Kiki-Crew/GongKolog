@@ -34,14 +34,14 @@ export default function Analyze() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-bold text-nano-accent">자소서 진단</h1>
+      <h1 className="text-2xl font-bold text-brand-accent">자소서 진단</h1>
 
       {/* 공고 (공통, 필수) */}
       <section className="flex flex-col gap-2">
         <label className="font-semibold">채용공고 <span className="text-missing">*</span></label>
-        <p className="text-sm text-gray-400">모든 문항에 공통 적용됩니다 (회사 인재상 반영).</p>
+        <p className="text-sm text-muted">모든 문항에 공통 적용됩니다 (회사 인재상 반영).</p>
         <textarea
-          className="h-40 rounded-lg bg-black/30 p-3"
+          className="h-40 rounded-lg bg-surface p-3 ring-1 ring-border"
           placeholder="채용공고 원문을 붙여넣으세요"
           value={jobPosting}
           onChange={(e) => setJobPosting(e.target.value)}
@@ -52,23 +52,23 @@ export default function Analyze() {
       <section className="flex flex-col gap-3">
         <label className="font-semibold">자소서 문항 ({items.length}/{MAX_ITEMS})</label>
         {items.map((it, i) => (
-          <div key={i} className="flex flex-col gap-2 rounded-lg border border-nano-primary/30 p-3">
+          <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-nano-accent">문항 {i + 1}</span>
+              <span className="text-sm text-brand-accent">문항 {i + 1}</span>
               {items.length > 1 && (
-                <button onClick={() => removeItem(i)} className="text-sm text-gray-400 hover:text-missing">
+                <button onClick={() => removeItem(i)} className="text-sm text-muted hover:text-missing">
                   삭제
                 </button>
               )}
             </div>
             <input
-              className="rounded-lg bg-black/30 p-2"
+              className="rounded-lg bg-surface p-2 ring-1 ring-border"
               placeholder="질문 (예: 협업에서 중요한 요소와 사례는?)"
               value={it.question}
               onChange={(e) => update(i, "question", e.target.value)}
             />
             <textarea
-              className="h-28 rounded-lg bg-black/30 p-2"
+              className="h-28 rounded-lg bg-surface p-2 ring-1 ring-border"
               placeholder="답변"
               value={it.answer}
               onChange={(e) => update(i, "answer", e.target.value)}
@@ -78,7 +78,7 @@ export default function Analyze() {
         {items.length < MAX_ITEMS && (
           <button
             onClick={addItem}
-            className="self-start rounded-lg border border-nano-primary/50 px-4 py-2 text-sm hover:bg-nano-primary/20"
+            className="self-start rounded-lg border border-border px-4 py-2 text-sm hover:bg-brand/10"
           >
             + 문항 추가
           </button>

@@ -24,7 +24,7 @@ export default function ItemPanel({
   const s = item.summary;
 
   return (
-    <div className="rounded-lg border border-nano-primary/30">
+    <div className="rounded-lg border border-border">
       <button
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-2 p-4 text-left"
@@ -32,7 +32,7 @@ export default function ItemPanel({
         <span className="font-semibold">
           {open ? "▾" : "▸"} {item.question}
         </span>
-        <span className="shrink-0 text-sm text-gray-400">
+        <span className="shrink-0 text-sm text-muted">
           🟢 {s.met} 🟡 {s.weak} 🔴 {s.missing}
         </span>
       </button>

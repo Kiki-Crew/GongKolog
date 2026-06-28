@@ -8,13 +8,13 @@ interface Props {
 
 export default function AnswerPane({ sentences, highlighted }: Props) {
   return (
-    <div className="rounded-lg bg-black/30 p-4">
-      <h3 className="mb-2 text-sm font-bold text-nano-accent">답변</h3>
+    <div className="rounded-lg bg-surface p-4 ring-1 ring-border">
+      <h3 className="mb-2 text-sm font-bold text-brand-accent">답변</h3>
       <p className="leading-relaxed">
         {sentences.map((s) => (
           <span
             key={s.id}
-            className={highlighted.has(s.id) ? "rounded bg-nano-accent/40 px-0.5" : ""}
+            className={highlighted.has(s.id) ? "rounded bg-brand-accent/25 px-0.5" : ""}
           >
             {s.text}{" "}
           </span>

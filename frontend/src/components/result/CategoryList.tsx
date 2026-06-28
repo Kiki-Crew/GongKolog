@@ -11,7 +11,7 @@ interface Props {
 export default function CategoryList({ categories, activeId, onSelect }: Props) {
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-bold text-nano-accent">평가 카테고리</h3>
+      <h3 className="text-sm font-bold text-brand-accent">평가 카테고리</h3>
       {categories.map((c) => (
         <CategoryCard
           key={c.id}

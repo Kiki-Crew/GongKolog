@@ -30,8 +30,8 @@ export default function MyPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-nano-accent">마이페이지</h1>
-        <button onClick={() => signOut()} className="text-sm text-gray-400">
+        <h1 className="text-2xl font-bold text-brand-accent">마이페이지</h1>
+        <button onClick={() => signOut()} className="text-sm text-muted">
           로그아웃
         </button>
       </div>
@@ -44,7 +44,7 @@ export default function MyPage() {
             <li key={h.id}>
               <Link
                 to={`/result/${h.id}`}
-                className="block rounded-lg bg-black/30 p-3 hover:bg-black/50"
+                className="block rounded-lg bg-surface p-3 ring-1 ring-border hover:bg-brand/10"
               >
                 {h.created_at?.slice(0, 10)} — 문항 {h.overall_summary?.total_items}개 /
                 카테고리 {h.overall_summary?.total_categories}개 중{" "}
@@ -53,7 +53,7 @@ export default function MyPage() {
             </li>
           ))}
           {history.length === 0 && (
-            <p className="text-gray-400">아직 분석 기록이 없습니다.</p>
+            <p className="text-muted">아직 분석 기록이 없습니다.</p>
           )}
         </ul>
       </section>

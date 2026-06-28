@@ -7,7 +7,7 @@ export default function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`rounded-lg bg-nano-primary px-6 py-3 font-semibold hover:bg-nano-accent disabled:opacity-50 ${className}`}
+      className={`rounded-lg bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-accent disabled:opacity-50 ${className}`}
       {...props}
     />
   );

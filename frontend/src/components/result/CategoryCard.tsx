@@ -8,9 +8,12 @@ const STATUS_STYLE: Record<Status, { dot: string; ring: string }> = {
 };
 
 function FromBadge({ from }: { from: string }) {
-  // 문항=accent, 공고=primary 로 출처 구분 (스펙 v2 신규 차별 포인트)
-  const cls = from === "문항" ? "bg-nano-accent/30" : "bg-nano-primary/40";
-  return <span className={`rounded px-1.5 py-0.5 text-xs ${cls}`}>{from}</span>;
+  // 문항=accent, 공고=brand 로 출처 구분 (스펙 v2 신규 차별 포인트)
+  const cls =
+    from === "문항"
+      ? "bg-brand-accent/20 text-brand-accent"
+      : "bg-brand/20 text-brand";
+  return <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${cls}`}>{from}</span>;
 }
 
 interface Props {
@@ -24,8 +27,8 @@ export default function CategoryCard({ category: c, active, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg border-l-4 ${st.ring} bg-black/30 p-3 text-left transition ${
-        active ? "ring-2 ring-nano-accent" : ""
+      className={`rounded-lg border-l-4 ${st.ring} bg-surface p-3 text-left ring-1 ring-border transition ${
+        active ? "ring-2 ring-brand-accent" : ""
       }`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -38,8 +41,8 @@ export default function CategoryCard({ category: c, active, onClick }: Props) {
           ))}
         </span>
       </div>
-      <p className="mt-1 text-xs text-gray-400">{c.criteria}</p>
-      <p className="mt-1 text-sm text-gray-300">{c.comment}</p>
+      <p className="mt-1 text-xs text-muted">{c.criteria}</p>
+      <p className="mt-1 text-sm text-fg/80">{c.comment}</p>
       {c.suggestion && <p className="mt-1 text-sm text-weak">💡 {c.suggestion}</p>}
     </button>
   );

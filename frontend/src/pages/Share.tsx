@@ -18,7 +18,7 @@ export default function Share() {
   if (!result) return <Spinner label="결과를 불러오는 중..." />;
   return (
     <div>
-      <p className="mb-4 text-sm text-gray-400">공유된 진단 결과입니다.</p>
+      <p className="mb-4 text-sm text-muted">공유된 진단 결과입니다.</p>
       <ResultView result={result} />
     </div>
   );

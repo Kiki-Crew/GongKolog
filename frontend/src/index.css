@@ -2,7 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── 라이트(기본) ── */
+:root {
+  --bg: 244 245 250;
+  --surface: 255 255 255;
+  --fg: 22 22 35;
+  --muted: 100 100 120;
+  --border: 214 214 228;
+  --brand: 83 74 183; /* #534AB7 */
+  --brand-accent: 90 80 205;
+}
+
+/* ── 다크 (NANO 다크퍼플) ── */
+.dark {
+  --bg: 10 10 26; /* #0a0a1a */
+  --surface: 24 24 42;
+  --fg: 234 234 245;
+  --muted: 150 150 175;
+  --border: 58 54 110;
+  --brand: 83 74 183; /* #534AB7 */
+  --brand-accent: 127 119 221; /* #7F77DD */
+}
+
 body {
-  @apply bg-nano-bg text-gray-100;
+  @apply bg-bg text-fg;
   margin: 0;
 }
