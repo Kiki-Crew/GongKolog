@@ -79,15 +79,14 @@ class AnalyzeResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-# ── 자소서 / 공고 저장 (마이페이지) ────────────────────────────────
+# ── 저장 (마이페이지) ──────────────────────────────────────────────
+# 공고: 단일 본문 (v1 그대로)
 class DocumentCreate(BaseModel):
     title: str
     content: str
 
 
-class Document(BaseModel):
-    id: str
-    user_id: str
+# 자소서: v2 — 문항+답변 묶음 (items jsonb)
+class CoverLetterCreate(BaseModel):
     title: str
-    content: str
-    created_at: str
+    items: list[AnalyzeItem]
