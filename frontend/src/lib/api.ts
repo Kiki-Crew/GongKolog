@@ -10,8 +10,9 @@ import type {
   SavedDocument,
 } from "../types/analysis";
 
+// VITE_API_BASE_URL 미설정 시 로컬 백엔드로 폴백 (.env 없어도 개발 동작)
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
 });
 
 api.interceptors.request.use(async (config) => {
