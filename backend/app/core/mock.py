@@ -1,4 +1,4 @@
-"""Mock 엔진 — 키/모델 없이 파이프라인을 끝까지 돌리기 위한 규칙 기반 대체 (스펙 8장 Tier 1).
+"""Mock 엔진 — 키/모델 없이 파이프라인을 끝까지 돌리기 위한 규칙 기반 대체 (스펙 v2).
 
 순수 stdlib만 사용 (google-genai / openai / sentence-transformers / numpy 불필요).
 실제 LLM 품질을 흉내내지는 않지만, **응답 스키마와 단계 연결이 올바른지** 검증하는 용도.
@@ -6,47 +6,41 @@
 """
 import re
 
-# ── 추출 mock ──────────────────────────────────────────────────────
 _BULLET = re.compile(r"^\s*(?:[-*•·]|\d+[.)])\s*")
-_CATEGORY_HINTS = [
-    ("기술역량", ["개발", "프로그래밍", "언어", "프레임워크", "DB", "데이터", "코드", "SQL", "API"]),
-    ("자격요건", ["학위", "전공", "자격증", "경력", "년 이상", "필수", "우대"]),
-    ("인성역량", ["리더십", "소통", "협업", "책임감", "열정", "팀워크"]),
-]
-
-
-def _guess_category(text: str) -> str:
-    for cat, kws in _CATEGORY_HINTS:
-        if any(k in text for k in kws):
-            return cat
-    return "경험"
-
-
-# 제목/머리말로 보이는 줄은 요구사항에서 제외
+# 제목/머리말로 보이는 줄은 카테고리에서 제외
 _HEADER = re.compile(r"^\[.*\]|채용\s*공고|모집\s*요강|담당\s*업무\s*[:：]?$")
 
 
-def mock_extract(job_posting: str, max_items: int = 8) -> list[dict]:
-    """공고를 줄/불릿 단위로 쪼개 요구사항 후보로 (규칙 기반)."""
-    lines = re.split(r"[\n,·]", job_posting)
-    items: list[dict] = []
-    seen: set[str] = set()
-    for line in lines:
+# ── 추출 mock (문항+공고 → 카테고리) ───────────────────────────────
+def mock_extract_categories(question: str, job_posting: str, max_items: int = 5) -> list[dict]:
+    """문항 1개 + 공고 줄 단위로 평가 카테고리 후보 생성 (규칙 기반)."""
+    cats: list[dict] = []
+
+    # 문항 기반 카테고리 1개
+    q = question.strip().rstrip("?？").strip()
+    cats.append({
+        "id": "c1",
+        "category": (q[:18] or "문항 요구사항"),
+        "from": ["문항"],
+        "criteria": q or "문항이 요구하는 내용을 구체적으로 보여줘야 함",
+    })
+
+    # 공고 기반 카테고리 (줄/불릿 단위)
+    seen = {cats[0]["criteria"]}
+    for line in re.split(r"[\n,·]", job_posting):
         text = _BULLET.sub("", line).strip(" .·-")
         if len(text) < 4 or text in seen or _HEADER.search(text):
             continue
         seen.add(text)
-        items.append({
-            "id": f"r{len(items) + 1}",
-            "text": text,
-            "category": _guess_category(text),
+        cats.append({
+            "id": f"c{len(cats) + 1}",
+            "category": text[:18],
+            "from": ["공고"],
+            "criteria": text,
         })
-        if len(items) >= max_items:
+        if len(cats) >= max_items:
             break
-    # 아무것도 못 뽑으면 통째로 1개
-    if not items:
-        items.append({"id": "r1", "text": job_posting.strip()[:60], "category": "경험"})
-    return items
+    return cats
 
 
 # ── 유사도 mock (BGE-M3 대체) ──────────────────────────────────────
@@ -64,20 +58,20 @@ def _jaccard(a: str, b: str) -> float:
     return inter / union if union else 0.0
 
 
-def mock_find_candidates(requirements: list[dict], sentences: list[dict], top_k: int = 3) -> dict:
+def mock_find_candidates(categories: list[dict], sentences: list[dict], top_k: int = 3) -> dict:
     if not sentences:
-        return {r["id"]: [] for r in requirements}
+        return {c["id"]: [] for c in categories}
     candidates: dict = {}
-    for req in requirements:
+    for c in categories:
         scored = sorted(
             (
-                {"sentence": s, "score": _jaccard(req["text"], s["text"])}
+                {"sentence": s, "score": _jaccard(c["criteria"], s["text"])}
                 for s in sentences
             ),
-            key=lambda c: c["score"],
+            key=lambda x: x["score"],
             reverse=True,
         )
-        candidates[req["id"]] = scored[:top_k]
+        candidates[c["id"]] = scored[:top_k]
     return candidates
 
 
@@ -86,35 +80,35 @@ _MET_THRESHOLD = 0.12
 _WEAK_THRESHOLD = 0.04
 
 
-def mock_judge(requirements: list[dict], candidates: dict) -> list[dict]:
+def mock_judge(categories: list[dict], candidates: dict) -> list[dict]:
     out: list[dict] = []
-    for req in requirements:
-        cand = candidates.get(req["id"], [])
+    for c in categories:
+        cand = candidates.get(c["id"], [])
         top = cand[0] if cand else None
         score = top["score"] if top else 0.0
 
         if score >= _MET_THRESHOLD:
             out.append({
-                "id": req["id"],
+                "id": c["id"],
                 "status": "met",
                 "evidence_ids": [top["sentence"]["id"]],
-                "comment": "관련 문장과 의미가 충분히 일치합니다. (mock)",
+                "comment": "기준과 답변 문장이 충분히 일치합니다. (mock)",
                 "suggestion": None,
             })
         elif score >= _WEAK_THRESHOLD:
             out.append({
-                "id": req["id"],
+                "id": c["id"],
                 "status": "weak",
                 "evidence_ids": [top["sentence"]["id"]],
                 "comment": "관련 언급은 있으나 근거가 약합니다. (mock)",
-                "suggestion": "구체적인 사례나 수치를 한 문장 보강하세요. (mock)",
+                "suggestion": "기준에 맞는 구체적 사례나 본인 기여를 한 문장 보강하세요. (mock)",
             })
         else:
             out.append({
-                "id": req["id"],
+                "id": c["id"],
                 "status": "missing",
                 "evidence_ids": [],
-                "comment": "자소서에서 관련 내용을 찾지 못했습니다. (mock)",
-                "suggestion": "공고가 요구하는 항목입니다. 관련 경험이 있다면 추가하세요. (mock)",
+                "comment": "답변에서 기준에 해당하는 내용을 찾지 못했습니다. (mock)",
+                "suggestion": "이 기준을 충족하는 경험을 답변에 추가하세요. (mock)",
             })
     return out

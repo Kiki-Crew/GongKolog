@@ -1,4 +1,4 @@
-"""분석 라우터 — 실행 + 결과 조회/기록 (스펙 6장).
+"""분석 라우터 — 실행 + 결과 조회/기록 (스펙 v2 2장).
 
 엔드포인트 정의만. 분석 로직은 core, 저장/조회는 services로 위임.
 """
@@ -11,15 +11,28 @@ from app.services import analyses as analyses_service
 
 router = APIRouter(prefix="/api", tags=["analyze"])
 
+MAX_ITEMS = 5  # 문항 상한 (LLM 2N 호출 → 무료 한도 보호, 스펙 v2 TODO)
+
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 def run_analyze(req: AnalyzeRequest, user_id: str | None = Depends(optional_user)):
     """분석 실행 + 결과 저장 (비로그인 가능)."""
-    if not req.job_posting.strip() or not req.cover_letter.strip():
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "공고와 자소서를 모두 입력하세요.")
+    if not req.job_posting.strip():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "채용공고를 입력하세요.")
+    if not req.items:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "문항을 1개 이상 입력하세요.")
+    if len(req.items) > MAX_ITEMS:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, f"문항은 최대 {MAX_ITEMS}개까지 가능합니다."
+        )
+    for it in req.items:
+        if not it.question.strip() or not it.answer.strip():
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, "각 문항의 질문과 답변을 모두 입력하세요."
+            )
 
     try:
-        result = analyze(req.job_posting, req.cover_letter)
+        result = analyze(req.job_posting, [it.model_dump() for it in req.items])
     except Exception as e:  # LLM/임베딩 실패
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"분석 실패: {e}")
 

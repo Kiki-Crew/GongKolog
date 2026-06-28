@@ -17,10 +17,12 @@ from app.core import embedding
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 서버 시작 시 BGE-M3 1회 로딩 (~2GB, 첫 실행 시 다운로드)
-    from sentence_transformers import SentenceTransformer
+    # mock_embedding 모드면 모델이 필요 없으니 건너뜀 (빠른 부팅 — 프론트 개발/HTTP 테스트용)
+    if not settings.mock_embedding:
+        from sentence_transformers import SentenceTransformer
 
-    model = SentenceTransformer(settings.embed_model, device=settings.embed_device)
-    embedding.set_model(model)
+        model = SentenceTransformer(settings.embed_model, device=settings.embed_device)
+        embedding.set_model(model)
     yield
     # shutdown 정리 필요 시 여기에
 

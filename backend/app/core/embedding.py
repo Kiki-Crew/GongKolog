@@ -1,10 +1,10 @@
-"""3단계 — BGE-M3 임베딩 + 후보 검색 (스펙 4.4).
+"""3단계 — BGE-M3 임베딩 + 후보 검색 (스펙 v2 3장).
 
+v2: 매칭 텍스트가 요구사항 text → 카테고리 criteria.
 모델은 main.py lifespan에서 1회 로딩 후 set_model()로 주입.
-벡터DB 불필요 — 문장 수십 개라 numpy 행렬곱 한 방.
+벡터DB 불필요 — 답변 문장 수십 개라 numpy 행렬곱 한 방.
 
-settings.mock_embedding=true 면 BGE-M3 대신 문자 n-gram Jaccard 유사도 사용
-(2GB 모델 다운로드 없이 파이프라인 검증 — 스펙 8장 Tier 1).
+settings.mock_embedding=true 면 BGE-M3 대신 문자 n-gram Jaccard 유사도 사용.
 numpy는 지연 import.
 """
 from app.config import settings
@@ -26,30 +26,29 @@ def get_model():
 
 
 def embed(texts: list[str]):
-    import numpy as np  # noqa: F401  (정규화 옵션이 내적=코사인 보장)
-
     # 정규화 → 내적 = 코사인 유사도
     return get_model().encode(texts, normalize_embeddings=True)
 
 
-def find_candidates(requirements: list[dict], sentences: list[dict], top_k: int = 3) -> dict:
+def find_candidates(categories: list[dict], sentences: list[dict], top_k: int = 3) -> dict:
+    """각 카테고리의 criteria와 답변 문장 간 유사도로 후보를 추린다."""
     if settings.mock_embedding:
-        return mock.mock_find_candidates(requirements, sentences, top_k)
+        return mock.mock_find_candidates(categories, sentences, top_k)
 
     if not sentences:
-        return {r["id"]: [] for r in requirements}
+        return {c["id"]: [] for c in categories}
 
     import numpy as np
 
-    req_vecs = embed([r["text"] for r in requirements])
+    cat_vecs = embed([c["criteria"] for c in categories])  # criteria 기준
     sent_vecs = embed([s["text"] for s in sentences])
-    sim = req_vecs @ sent_vecs.T  # (요구사항수, 문장수)
+    sim = cat_vecs @ sent_vecs.T  # (카테고리수, 문장수)
 
     candidates: dict = {}
-    for i, req in enumerate(requirements):
+    for i, cat in enumerate(categories):
         scores = sim[i]
         top_idx = np.argsort(scores)[::-1][:top_k]
-        candidates[req["id"]] = [
+        candidates[cat["id"]] = [
             {"sentence": sentences[j], "score": float(scores[j])}
             for j in top_idx
         ]

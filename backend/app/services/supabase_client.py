@@ -1,13 +1,18 @@
-"""Supabase 클라이언트 싱글톤 (service_role 키 — 백엔드 전용, 스펙 5.2 택1-B).
+"""Supabase 클라이언트 (service_role 키 — 백엔드 전용, 스펙 5.2 택1-B).
 
-데이터는 전부 FastAPI 경유. RLS는 service_role로 우회되므로
-user_id 체크는 각 service 함수에서 직접 수행한다.
+지연 생성: import 시점이 아니라 첫 호출 때 만든다.
+→ Supabase 키/패키지 없이도 서버 부팅·분석(/api/analyze) 가능.
+  (저장은 best-effort라 키 없으면 조용히 실패, 분석 결과는 반환)
 """
-from supabase import Client, create_client
+from functools import lru_cache
 
 from app.config import settings
 
-supabase: Client = create_client(
-    settings.supabase_url,
-    settings.supabase_service_role_key,
-)
+
+@lru_cache(maxsize=1)
+def get_supabase():
+    if not settings.supabase_url or not settings.supabase_service_role_key:
+        raise RuntimeError("Supabase 미설정 — .env의 SUPABASE_URL / SERVICE_ROLE_KEY 확인")
+    from supabase import create_client
+
+    return create_client(settings.supabase_url, settings.supabase_service_role_key)
