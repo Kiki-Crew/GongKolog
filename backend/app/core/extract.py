@@ -1,7 +1,7 @@
 """1단계 — 문항+공고 → 평가 카테고리 추출 (스펙 v2 3장).
 
 Groq 우선(구조적 추출·속도), 실패 시 Gemini 폴백.
-JSON 파싱 실패 시 1회 재시도.
+파싱 실패/빈 결과 시 1회 재시도. 객체로 감싸 와도 리스트 추출.
 settings.mock_llm=true 면 규칙 기반 mock 사용 (키 불필요).
 """
 import json
@@ -10,7 +10,7 @@ from app.config import settings
 from app.core import mock
 from app.core.llm import call_with_fallback
 from app.core.prompts import EXTRACT_PROMPT
-from app.core.utils import safe_json
+from app.core.utils import coerce_list, safe_json
 
 
 def extract_categories(question: str, job_posting: str) -> list[dict]:
@@ -18,7 +18,11 @@ def extract_categories(question: str, job_posting: str) -> list[dict]:
         return mock.mock_extract_categories(question, job_posting)
 
     prompt = EXTRACT_PROMPT.format(question=question, job_posting=job_posting)
-    try:
-        return safe_json(call_with_fallback(prompt, primary="groq", backup="gemini"))
-    except (json.JSONDecodeError, ValueError):
-        return safe_json(call_with_fallback(prompt, primary="groq", backup="gemini"))
+    for _ in range(2):
+        try:
+            cats = coerce_list(safe_json(call_with_fallback(prompt, primary="groq", backup="gemini")))
+            if cats:
+                return cats
+        except (json.JSONDecodeError, ValueError):
+            continue
+    return []
