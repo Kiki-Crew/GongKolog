@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     groq_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
-    groq_model: str = "qwen-2.5-32b"
+    # Groq 모델은 수시로 폐기됨 → https://console.groq.com/docs/models 에서 현재 ID 확인.
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # Supabase
     supabase_url: str = ""
