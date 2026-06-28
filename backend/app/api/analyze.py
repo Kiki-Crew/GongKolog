@@ -36,13 +36,16 @@ def run_analyze(req: AnalyzeRequest, user_id: str | None = Depends(optional_user
     except Exception as e:  # LLM/임베딩 실패
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"분석 실패: {e}")
 
-    try:
-        analyses_service.save_analysis(
-            result, user_id, req.cover_letter_id, req.job_posting_id
-        )
-    except Exception:
-        # 저장 실패해도 분석 결과는 반환 (데모 안정성)
-        pass
+    # 비로그인 분석은 저장하지 않음 — "분석 후 즉시 폐기" (개인정보 보호, 스펙 9장)
+    # 로그인 사용자만 analyses에 저장 → 마이페이지 기록·공유로 재열람 가능.
+    if user_id:
+        try:
+            analyses_service.save_analysis(
+                result, user_id, req.cover_letter_id, req.job_posting_id
+            )
+        except Exception:
+            # 저장 실패해도 분석 결과는 반환 (데모 안정성)
+            pass
 
     return result
 

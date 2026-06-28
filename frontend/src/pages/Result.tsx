@@ -14,13 +14,22 @@ export default function Result() {
   const [result, setResult] = useState<AnalyzeResponse | null>(
     (location.state as AnalyzeResponse) ?? null,
   );
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!result && id) {
-      getAnalysis(id).then(setResult).catch(() => setResult(null));
+      getAnalysis(id).then(setResult).catch(() => setNotFound(true));
     }
   }, [id, result]);
 
+  if (notFound) {
+    return (
+      <p className="text-muted">
+        결과를 찾을 수 없습니다. 비로그인 분석은 저장되지 않아 새로고침·공유로 다시 열 수
+        없어요. 결과를 보관하려면 <b>로그인 후 분석</b>하세요.
+      </p>
+    );
+  }
   if (!result) return <Spinner label="결과를 불러오는 중..." />;
   return <ResultView result={result} />;
 }

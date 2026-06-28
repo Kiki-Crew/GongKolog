@@ -10,11 +10,15 @@ import type { AnalyzeResponse } from "../types/analysis";
 export default function Share() {
   const { id } = useParams();
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (id) getAnalysis(id).then(setResult).catch(() => setResult(null));
+    if (id) getAnalysis(id).then(setResult).catch(() => setNotFound(true));
   }, [id]);
 
+  if (notFound) {
+    return <p className="text-muted">결과를 찾을 수 없습니다 (만료되었거나 저장되지 않은 분석).</p>;
+  }
   if (!result) return <Spinner label="결과를 불러오는 중..." />;
   return (
     <div>
