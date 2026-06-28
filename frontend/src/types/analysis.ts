@@ -1,4 +1,4 @@
-// 응답 스키마 타입 (스펙 7.4 / 3장)
+// 응답 스키마 타입 (스펙 v2 5장)
 
 export type Status = "met" | "weak" | "missing";
 
@@ -7,18 +7,35 @@ export interface Sentence {
   text: string;
 }
 
-export interface Requirement {
+export interface Category {
   id: string;
-  text: string;
+  category: string;
+  from: string[]; // "문항" / "공고" / 둘 다
+  criteria: string;
   status: Status;
-  evidence_ids: string[];
+  evidence_ids: string[]; // 같은 item 내 답변 문장 id만 유효 (스코프 분리)
   comment: string;
-  category?: string | null;
   suggestion?: string | null;
 }
 
-export interface Summary {
+export interface ItemSummary {
   total: number;
+  met: number;
+  weak: number;
+  missing: number;
+}
+
+export interface ItemResult {
+  item_id: string;
+  question: string;
+  answer_sentences: Sentence[];
+  summary: ItemSummary;
+  categories: Category[];
+}
+
+export interface OverallSummary {
+  total_items: number;
+  total_categories: number;
   met: number;
   weak: number;
   missing: number;
@@ -27,12 +44,17 @@ export interface Summary {
 
 export interface AnalyzeResponse {
   analysis_id: string;
-  summary: Summary;
-  cover_letter_sentences: Sentence[];
-  requirements: Requirement[];
+  overall_summary: OverallSummary;
+  items: ItemResult[];
 }
 
-// 마이페이지용
+// ── 요청 ──
+export interface AnalyzeItemInput {
+  question: string;
+  answer: string;
+}
+
+// ── 마이페이지 ──
 export interface SavedDocument {
   id: string;
   user_id: string;
@@ -44,5 +66,5 @@ export interface SavedDocument {
 export interface AnalysisHistoryItem {
   id: string;
   created_at: string;
-  summary: Summary;
+  overall_summary: OverallSummary;
 }

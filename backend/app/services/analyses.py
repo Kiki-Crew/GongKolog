@@ -38,7 +38,7 @@ def list_analyses(user_id: str) -> list[dict]:
         {
             "id": row["id"],
             "created_at": row["created_at"],
-            "summary": (row.get("result_json") or {}).get("summary"),
+            "overall_summary": (row.get("result_json") or {}).get("overall_summary"),
         }
         for row in res.data
     ]

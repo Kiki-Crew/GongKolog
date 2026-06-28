@@ -5,6 +5,7 @@ import axios from "axios";
 import { supabase } from "./supabase";
 import type {
   AnalysisHistoryItem,
+  AnalyzeItemInput,
   AnalyzeResponse,
   SavedDocument,
 } from "../types/analysis";
@@ -26,11 +27,11 @@ api.interceptors.request.use(async (config) => {
 // ── API 함수 ──────────────────────────────────────────────────────
 export async function analyze(
   job_posting: string,
-  cover_letter: string,
+  items: AnalyzeItemInput[],
 ): Promise<AnalyzeResponse> {
   const { data } = await api.post<AnalyzeResponse>("/api/analyze", {
     job_posting,
-    cover_letter,
+    items,
   });
   return data;
 }

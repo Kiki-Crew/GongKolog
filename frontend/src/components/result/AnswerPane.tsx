@@ -1,5 +1,4 @@
-// 좌: 자소서 + 하이라이트 (스펙 7.3)
-// activeReq에 연결된 evidence 문장 id를 강조.
+// 좌: 답변 본문 + 하이라이트 (스펙 v2) — evidence는 같은 item 스코프
 import type { Sentence } from "../../types/analysis";
 
 interface Props {
@@ -7,10 +6,10 @@ interface Props {
   highlighted: Set<string>;
 }
 
-export default function CoverLetterPane({ sentences, highlighted }: Props) {
+export default function AnswerPane({ sentences, highlighted }: Props) {
   return (
     <div className="rounded-lg bg-black/30 p-4">
-      <h2 className="mb-2 font-bold text-nano-accent">자소서</h2>
+      <h3 className="mb-2 text-sm font-bold text-nano-accent">답변</h3>
       <p className="leading-relaxed">
         {sentences.map((s) => (
           <span

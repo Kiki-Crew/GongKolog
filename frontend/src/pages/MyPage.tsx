@@ -46,8 +46,9 @@ export default function MyPage() {
                 to={`/result/${h.id}`}
                 className="block rounded-lg bg-black/30 p-3 hover:bg-black/50"
               >
-                {h.created_at?.slice(0, 10)} — 총 {h.summary?.total}개 중{" "}
-                {h.summary?.met}개 충족
+                {h.created_at?.slice(0, 10)} — 문항 {h.overall_summary?.total_items}개 /
+                카테고리 {h.overall_summary?.total_categories}개 중{" "}
+                {h.overall_summary?.met}개 충족
               </Link>
             </li>
           ))}

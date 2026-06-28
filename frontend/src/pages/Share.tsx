@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import Spinner from "../components/common/Spinner";
-import SplitView from "../components/result/SplitView";
+import ResultView from "../components/result/ResultView";
 import { getAnalysis } from "../lib/api";
 import type { AnalyzeResponse } from "../types/analysis";
 
@@ -19,7 +19,7 @@ export default function Share() {
   return (
     <div>
       <p className="mb-4 text-sm text-gray-400">공유된 진단 결과입니다.</p>
-      <SplitView result={result} />
+      <ResultView result={result} />
     </div>
   );
 }
