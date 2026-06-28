@@ -10,12 +10,12 @@ create table if not exists profiles (
   created_at timestamptz default now()
 );
 
--- ── 저장된 자소서 ──────────────────────────────────────────────────
+-- ── 저장된 자소서 (v2: 문항+답변 묶음) ─────────────────────────────
 create table if not exists cover_letters (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete cascade,
   title text,
-  content text,
+  items jsonb,   -- [{question, answer}, ...]  (v2 변경점)
   created_at timestamptz default now()
 );
 
