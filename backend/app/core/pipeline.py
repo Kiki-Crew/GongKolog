@@ -53,7 +53,7 @@ def analyze_item(item: dict, job_posting: str, item_id: str) -> dict:
     categories = extract_categories(item["question"], job_posting)
     # 2) 답변 문장 분리
     sentences = split_sentences(item["answer"])
-    # 3) criteria ↔ 답변 문장 임베딩 후보
+    # 3) 카테고리 ↔ 답변 문장 윈도우 임베딩 후보
     candidates = find_candidates(categories, sentences)
     # 4) 판정 (Gemini 우선)
     judgments = judge(categories, candidates)

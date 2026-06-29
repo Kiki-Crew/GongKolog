@@ -20,11 +20,55 @@ import type {
 
 const MAX_ITEMS = 5;
 const EMPTY: AnalyzeItemInput = { question: "", answer: "" };
+const DRAFT_STORAGE_KEY = "gongkolog:analyze-draft:v1";
+
+type AnalyzeDraft = {
+  jobPosting: string;
+  items: AnalyzeItemInput[];
+};
+
+function normalizeItems(value: unknown): AnalyzeItemInput[] {
+  // sessionStorage에는 문자열만 저장되므로, 복원 시 배열/문자열 여부를 방어적으로 확인한다.
+  if (!Array.isArray(value)) return [{ ...EMPTY }];
+
+  const items = value
+    .map((item) => ({
+      question: typeof item?.question === "string" ? item.question : "",
+      answer: typeof item?.answer === "string" ? item.answer : "",
+    }))
+    .slice(0, MAX_ITEMS);
+
+  return items.length > 0 ? items : [{ ...EMPTY }];
+}
+
+function readDraft(): AnalyzeDraft {
+  // 브라우저 탭 단위 임시 저장이다. 백엔드/DB에는 저장하지 않는다.
+  const emptyDraft = { jobPosting: "", items: [{ ...EMPTY }] };
+
+  try {
+    const raw = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return emptyDraft;
+
+    const parsed = JSON.parse(raw);
+    return {
+      jobPosting: typeof parsed?.jobPosting === "string" ? parsed.jobPosting : "",
+      items: normalizeItems(parsed?.items),
+    };
+  } catch {
+    // 깨진 JSON이 남아 있어도 입력 화면이 죽지 않도록 기본값으로 복구한다.
+    return emptyDraft;
+  }
+}
+
+function writeDraft(draft: AnalyzeDraft) {
+  // 뒤로 가기/앞으로 가기처럼 라우트만 바뀌는 상황에서도 입력값을 복원하기 위한 프론트 저장이다.
+  window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+}
 
 export default function Analyze() {
   const { session } = useAuth();
-  const [jobPosting, setJobPosting] = useState("");
-  const [items, setItems] = useState<AnalyzeItemInput[]>([{ ...EMPTY }]);
+  const [jobPosting, setJobPosting] = useState(() => readDraft().jobPosting);
+  const [items, setItems] = useState<AnalyzeItemInput[]>(() => readDraft().items);
   const { run, loading, error } = useAnalyze();
   const navigate = useNavigate();
 
@@ -32,27 +76,39 @@ export default function Analyze() {
   const [savedJobs, setSavedJobs] = useState<SavedJobPosting[]>([]);
   const [savedLetters, setSavedLetters] = useState<SavedCoverLetter[]>([]);
 
+  useEffect(() => {
+    // 사용자가 입력할 때마다 임시 저장한다. 분석 결과 화면에서 뒤로 가도 입력값이 유지된다.
+    writeDraft({ jobPosting, items });
+  }, [jobPosting, items]);
+
   function reloadSaved() {
     if (!session) return;
     listJobPostings().then(setSavedJobs).catch(() => setSavedJobs([]));
     listCoverLetters().then(setSavedLetters).catch(() => setSavedLetters([]));
   }
+
   useEffect(reloadSaved, [session]);
 
   function update(i: number, field: keyof AnalyzeItemInput, value: string) {
-    setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)));
+    setItems((prev) =>
+      prev.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)),
+    );
   }
+
   function addItem() {
     setItems((prev) => (prev.length < MAX_ITEMS ? [...prev, { ...EMPTY }] : prev));
   }
+
   function removeItem(i: number) {
     setItems((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   async function saveJob() {
     if (!jobPosting.trim()) return alert("저장할 공고 내용이 비어 있습니다.");
+
     const title = window.prompt("공고 제목", "내 공고");
     if (!title) return;
+
     try {
       await createJobPosting(title, jobPosting);
       reloadSaved();
@@ -65,8 +121,10 @@ export default function Analyze() {
   async function saveLetter() {
     const valid = items.filter((it) => it.question.trim() && it.answer.trim());
     if (!valid.length) return alert("저장할 문항이 비어 있습니다.");
+
     const title = window.prompt("자소서 제목", "내 자소서");
     if (!title) return;
+
     try {
       await createCoverLetter(title, valid);
       reloadSaved();
@@ -93,6 +151,7 @@ export default function Analyze() {
           <label className="font-semibold">
             채용공고 <span className="text-missing">*</span>
           </label>
+
           {session && (
             <div className="flex items-center gap-2 text-sm">
               <select
@@ -105,16 +164,26 @@ export default function Analyze() {
               >
                 <option value="">📁 저장한 공고 불러오기</option>
                 {savedJobs.map((d) => (
-                  <option key={d.id} value={d.id}>{d.title}</option>
+                  <option key={d.id} value={d.id}>
+                    {d.title}
+                  </option>
                 ))}
               </select>
-              <button onClick={saveJob} className="text-brand-accent hover:underline">
+
+              <button
+                onClick={saveJob}
+                className="text-brand-accent hover:underline"
+              >
                 💾 저장
               </button>
             </div>
           )}
         </div>
-        <p className="text-sm text-muted">모든 문항에 공통 적용됩니다 (회사 인재상 반영).</p>
+
+        <p className="text-sm text-muted">
+          모든 문항에 공통 적용됩니다 (회사 인재상 반영).
+        </p>
+
         <textarea
           className="h-40 rounded-lg bg-surface p-3 ring-1 ring-border"
           placeholder="채용공고 원문을 붙여넣으세요"
@@ -126,7 +195,10 @@ export default function Analyze() {
       {/* 문항 반복 */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <label className="font-semibold">자소서 문항 ({items.length}/{MAX_ITEMS})</label>
+          <label className="font-semibold">
+            자소서 문항 ({items.length}/{MAX_ITEMS})
+          </label>
+
           {session && (
             <div className="flex items-center gap-2 text-sm">
               <select
@@ -134,36 +206,54 @@ export default function Analyze() {
                 value=""
                 onChange={(e) => {
                   const doc = savedLetters.find((d) => d.id === e.target.value);
-                  if (doc && doc.items?.length) setItems(doc.items.map((x) => ({ ...x })));
+                  if (doc && doc.items?.length) {
+                    setItems(doc.items.map((x) => ({ ...x })));
+                  }
                 }}
               >
                 <option value="">📁 저장한 자소서 불러오기</option>
                 {savedLetters.map((d) => (
-                  <option key={d.id} value={d.id}>{d.title}</option>
+                  <option key={d.id} value={d.id}>
+                    {d.title}
+                  </option>
                 ))}
               </select>
-              <button onClick={saveLetter} className="text-brand-accent hover:underline">
+
+              <button
+                onClick={saveLetter}
+                className="text-brand-accent hover:underline"
+              >
                 💾 저장
               </button>
             </div>
           )}
         </div>
+
         {items.map((it, i) => (
-          <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+          <div
+            key={i}
+            className="flex flex-col gap-2 rounded-lg border border-border p-3"
+          >
             <div className="flex items-center justify-between">
               <span className="text-sm text-brand-accent">문항 {i + 1}</span>
+
               {items.length > 1 && (
-                <button onClick={() => removeItem(i)} className="text-sm text-muted hover:text-missing">
+                <button
+                  onClick={() => removeItem(i)}
+                  className="text-sm text-muted hover:text-missing"
+                >
                   삭제
                 </button>
               )}
             </div>
+
             <input
               className="rounded-lg bg-surface p-2 ring-1 ring-border"
               placeholder="질문 (예: 협업에서 중요한 요소와 사례는?)"
               value={it.question}
               onChange={(e) => update(i, "question", e.target.value)}
             />
+
             <textarea
               className="h-28 rounded-lg bg-surface p-2 ring-1 ring-border"
               placeholder="답변"
@@ -172,6 +262,7 @@ export default function Analyze() {
             />
           </div>
         ))}
+
         {items.length < MAX_ITEMS && (
           <button
             onClick={addItem}
@@ -183,9 +274,11 @@ export default function Analyze() {
       </section>
 
       {error && <p className="text-missing">{error}</p>}
+
       <Button onClick={onSubmit} disabled={loading} className="self-start">
         {loading ? "분석 중..." : "진단하기"}
       </Button>
+
       {!session && (
         <p className="text-sm text-muted">
           로그인하면 공고·자소서를 저장해두고 다음에 불러올 수 있어요.

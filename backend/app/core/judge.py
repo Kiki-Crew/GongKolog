@@ -14,18 +14,47 @@ from app.core.utils import coerce_list, safe_json
 
 
 def build_judge_input(categories: list[dict], candidates: dict) -> str:
+    """
+    LLM 판정 입력을 구성합니다.
+
+    수정 이유:
+    - 후보 문장 하나만 넘기면 앞뒤 맥락이 끊깁니다.
+    - embedding.py에서 만든 context_sentences를 함께 넘겨
+      경험 흐름을 조금 더 보존합니다.
+    - job_signals는 공고 전체가 아니라 카테고리 판단에 필요한 보조 신호만 제공합니다.
+    """
     blocks = []
-    for c in categories:
-        lines = [f'카테고리 {c["id"]}: {c["category"]} — 기준: {c["criteria"]}']
-        cand = candidates[c["id"]]
+
+    for category in categories:
+        lines = [
+            f'카테고리 {category["id"]}: {category["category"]}',
+            f'기준: {category["criteria"]}',
+        ]
+
+        job_signals = category.get("job_signals", [])
+        if job_signals:
+            lines.append("채용공고 보조 신호:")
+            for signal in job_signals[:3]:
+                lines.append(f"- {signal}")
+
+        cand = candidates.get(category["id"], [])
+
         if cand:
-            lines.append("후보 답변 문장:")
-            for x in cand:
-                s = x["sentence"]
-                lines.append(f'  - {s["id"]}: {s["text"]}')
+            lines.append("판정용 답변 근거:")
+
+            for item in cand:
+                context_sentences = item.get("context_sentences") or [item["sentence"]]
+
+                context_text = " ".join(
+                    f'{s["id"]}: {s["text"]}' for s in context_sentences
+                )
+
+                lines.append(f"- {context_text}")
         else:
-            lines.append("후보 답변 문장: 없음")
+            lines.append("판정용 답변 근거: 없음")
+
         blocks.append("\n".join(lines))
+
     return "\n\n".join(blocks)
 
 
