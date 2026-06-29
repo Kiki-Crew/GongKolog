@@ -15,4 +15,8 @@ def get_supabase():
         raise RuntimeError("Supabase 미설정 — .env의 SUPABASE_URL / SERVICE_ROLE_KEY 확인")
     from supabase import create_client
 
-    return create_client(settings.supabase_url, settings.supabase_service_role_key)
+    # 끝 슬래시/실수로 붙은 경로 제거 (PGRST125 'Invalid path' 방지)
+    url = settings.supabase_url.strip().rstrip("/")
+    if url.endswith("/rest/v1"):
+        url = url[: -len("/rest/v1")]
+    return create_client(url, settings.supabase_service_role_key)
