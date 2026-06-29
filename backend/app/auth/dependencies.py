@@ -3,9 +3,13 @@
 토큰 서명 방식 두 가지를 모두 지원:
 - HS256: 레거시 공유 시크릿(SUPABASE_JWT_SECRET)로 검증
 - RS256/ES256: 새 키 체계 → Supabase JWKS(공개키)로 검증
+
+JWKS는 httpx로 가져온다(기본 certifi 인증서 사용 → macOS 등에서
+PyJWKClient의 urllib SSL 인증서 오류 회피).
 """
 from functools import lru_cache
 
+import httpx
 import jwt
 from fastapi import Header, HTTPException, status
 
@@ -13,9 +17,24 @@ from app.config import settings
 
 
 @lru_cache(maxsize=1)
-def _jwks_client() -> "jwt.PyJWKClient":
+def _jwks() -> "jwt.PyJWKSet":
     url = settings.supabase_url.strip().rstrip("/") + "/auth/v1/.well-known/jwks.json"
-    return jwt.PyJWKClient(url)
+    resp = httpx.get(url, timeout=10)
+    resp.raise_for_status()
+    return jwt.PyJWKSet.from_dict(resp.json())
+
+
+def _signing_key(token: str):
+    kid = jwt.get_unverified_header(token).get("kid")
+    for k in _jwks().keys:
+        if k.key_id == kid:
+            return k.key
+    # kid 못 찾으면 키 로테이션 가능성 → 캐시 비우고 1회 재조회
+    _jwks.cache_clear()
+    for k in _jwks().keys:
+        if k.key_id == kid:
+            return k.key
+    raise jwt.PyJWTError(f"JWKS에서 kid={kid} 키를 찾지 못함")
 
 
 def _decode(token: str) -> str:
@@ -29,10 +48,9 @@ def _decode(token: str) -> str:
                 audience="authenticated",
             )
         else:
-            signing_key = _jwks_client().get_signing_key_from_jwt(token).key
             payload = jwt.decode(
                 token,
-                signing_key,
+                _signing_key(token),
                 algorithms=[alg],
                 audience="authenticated",
             )
