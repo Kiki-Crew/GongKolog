@@ -7,7 +7,8 @@ import type {
   AnalysisHistoryItem,
   AnalyzeItemInput,
   AnalyzeResponse,
-  SavedDocument,
+  SavedCoverLetter,
+  SavedJobPosting,
 } from "../types/analysis";
 
 // VITE_API_BASE_URL 미설정 시 로컬 백엔드로 폴백 (.env 없어도 개발 동작)
@@ -50,25 +51,44 @@ export async function listAnalyses(): Promise<AnalysisHistoryItem[]> {
   return data;
 }
 
-export async function listDocuments(
-  kind: "cover-letters" | "job-postings",
-): Promise<SavedDocument[]> {
-  const { data } = await api.get<SavedDocument[]>(`/api/${kind}`);
+// ── 저장된 공고 (title + content) ──
+export async function listJobPostings(): Promise<SavedJobPosting[]> {
+  const { data } = await api.get<SavedJobPosting[]>("/api/job-postings");
   return data;
 }
 
-export async function saveDocument(
-  kind: "cover-letters" | "job-postings",
+export async function createJobPosting(
   title: string,
   content: string,
-): Promise<SavedDocument> {
-  const { data } = await api.post<SavedDocument>(`/api/${kind}`, { title, content });
+): Promise<SavedJobPosting> {
+  const { data } = await api.post<SavedJobPosting>("/api/job-postings", {
+    title,
+    content,
+  });
   return data;
 }
 
-export async function deleteDocument(
-  kind: "cover-letters" | "job-postings",
-  id: string,
-): Promise<void> {
-  await api.delete(`/api/${kind}/${id}`);
+export async function deleteJobPosting(id: string): Promise<void> {
+  await api.delete(`/api/job-postings/${id}`);
+}
+
+// ── 저장된 자소서 (title + items) ──
+export async function listCoverLetters(): Promise<SavedCoverLetter[]> {
+  const { data } = await api.get<SavedCoverLetter[]>("/api/cover-letters");
+  return data;
+}
+
+export async function createCoverLetter(
+  title: string,
+  items: AnalyzeItemInput[],
+): Promise<SavedCoverLetter> {
+  const { data } = await api.post<SavedCoverLetter>("/api/cover-letters", {
+    title,
+    items,
+  });
+  return data;
+}
+
+export async function deleteCoverLetter(id: string): Promise<void> {
+  await api.delete(`/api/cover-letters/${id}`);
 }

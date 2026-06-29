@@ -54,12 +54,20 @@ export interface AnalyzeItemInput {
   answer: string;
 }
 
-// ── 마이페이지 ──
-export interface SavedDocument {
+// ── 마이페이지 저장 문서 ──
+export interface SavedJobPosting {
   id: string;
   user_id: string;
   title: string;
   content: string;
+  created_at: string;
+}
+
+export interface SavedCoverLetter {
+  id: string;
+  user_id: string;
+  title: string;
+  items: AnalyzeItemInput[]; // [{question, answer}, ...]
   created_at: string;
 }
 

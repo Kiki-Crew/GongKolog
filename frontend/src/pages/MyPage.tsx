@@ -5,16 +5,40 @@ import { Link } from "react-router-dom";
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
 import Spinner from "../components/common/Spinner";
 import { useAuth, signOut } from "../hooks/useAuth";
-import { listAnalyses } from "../lib/api";
-import type { AnalysisHistoryItem } from "../types/analysis";
+import {
+  deleteCoverLetter,
+  deleteJobPosting,
+  listAnalyses,
+  listCoverLetters,
+  listJobPostings,
+} from "../lib/api";
+import type {
+  AnalysisHistoryItem,
+  SavedCoverLetter,
+  SavedJobPosting,
+} from "../types/analysis";
 
 export default function MyPage() {
   const { session, loading } = useAuth();
   const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
+  const [jobs, setJobs] = useState<SavedJobPosting[]>([]);
+  const [letters, setLetters] = useState<SavedCoverLetter[]>([]);
 
   useEffect(() => {
-    if (session) listAnalyses().then(setHistory).catch(() => setHistory([]));
+    if (!session) return;
+    listAnalyses().then(setHistory).catch(() => setHistory([]));
+    listJobPostings().then(setJobs).catch(() => setJobs([]));
+    listCoverLetters().then(setLetters).catch(() => setLetters([]));
   }, [session]);
+
+  async function removeJob(id: string) {
+    await deleteJobPosting(id);
+    setJobs((prev) => prev.filter((d) => d.id !== id));
+  }
+  async function removeLetter(id: string) {
+    await deleteCoverLetter(id);
+    setLetters((prev) => prev.filter((d) => d.id !== id));
+  }
 
   if (loading) return <Spinner />;
 
@@ -58,7 +82,50 @@ export default function MyPage() {
         </ul>
       </section>
 
-      {/* TODO: 저장한 자소서/공고 목록 + 저장/삭제 (스펙 1.4) */}
+      {/* 저장한 공고 */}
+      <section>
+        <h2 className="mb-2 font-semibold">내 공고</h2>
+        <ul className="flex flex-col gap-2">
+          {jobs.map((d) => (
+            <li
+              key={d.id}
+              className="flex items-center justify-between rounded-lg bg-surface p-3 ring-1 ring-border"
+            >
+              <span>{d.title}</span>
+              <button onClick={() => removeJob(d.id)} className="text-sm text-muted hover:text-missing">
+                삭제
+              </button>
+            </li>
+          ))}
+          {jobs.length === 0 && (
+            <p className="text-muted">저장한 공고가 없습니다. 분석 화면에서 저장할 수 있어요.</p>
+          )}
+        </ul>
+      </section>
+
+      {/* 저장한 자소서 */}
+      <section>
+        <h2 className="mb-2 font-semibold">내 자소서</h2>
+        <ul className="flex flex-col gap-2">
+          {letters.map((d) => (
+            <li
+              key={d.id}
+              className="flex items-center justify-between rounded-lg bg-surface p-3 ring-1 ring-border"
+            >
+              <span>
+                {d.title}{" "}
+                <span className="text-sm text-muted">({d.items?.length ?? 0}문항)</span>
+              </span>
+              <button onClick={() => removeLetter(d.id)} className="text-sm text-muted hover:text-missing">
+                삭제
+              </button>
+            </li>
+          ))}
+          {letters.length === 0 && (
+            <p className="text-muted">저장한 자소서가 없습니다. 분석 화면에서 저장할 수 있어요.</p>
+          )}
+        </ul>
+      </section>
     </div>
   );
 }
