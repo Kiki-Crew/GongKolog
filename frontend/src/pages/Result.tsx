@@ -4,12 +4,14 @@ import { useLocation, useParams } from "react-router-dom";
 
 import Spinner from "../components/common/Spinner";
 import ResultView from "../components/result/ResultView";
+import { useAuth } from "../hooks/useAuth";
 import { getAnalysis } from "../lib/api";
 import type { AnalyzeResponse } from "../types/analysis";
 
 export default function Result() {
   const { id } = useParams();
   const location = useLocation();
+  const { session } = useAuth();
   // 분석 직후엔 navigate state로 전달받음, 새로고침/공유 시 id로 재조회
   const [result, setResult] = useState<AnalyzeResponse | null>(
     (location.state as AnalyzeResponse) ?? null,
@@ -31,5 +33,6 @@ export default function Result() {
     );
   }
   if (!result) return <Spinner label="결과를 불러오는 중..." />;
-  return <ResultView result={result} />;
+  // 로그인 사용자 = 저장된 분석 → 공유 링크 유효
+  return <ResultView result={result} showShare={!!session} />;
 }
