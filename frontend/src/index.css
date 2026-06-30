@@ -28,16 +28,3 @@ body {
   @apply bg-bg text-fg;
   margin: 0;
 }
-
-@layer utilities {
-  /* 스크롤 등장 효과 */
-  .reveal {
-    opacity: 0;
-    transform: translateY(14px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  .reveal.on {
-    opacity: 1;
-    transform: none;
-  }
-}
