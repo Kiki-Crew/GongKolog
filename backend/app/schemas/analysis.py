@@ -90,3 +90,14 @@ class DocumentCreate(BaseModel):
 class CoverLetterCreate(BaseModel):
     title: str
     items: list[AnalyzeItem]
+
+
+# 수정(부분) — 보낸 필드만 변경
+class JobPostingUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+
+
+class CoverLetterUpdate(BaseModel):
+    title: str | None = None
+    items: list[AnalyzeItem] | None = None

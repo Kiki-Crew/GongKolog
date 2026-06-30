@@ -68,6 +68,14 @@ export async function createJobPosting(
   return data;
 }
 
+export async function updateJobPosting(
+  id: string,
+  fields: { title?: string; content?: string },
+): Promise<SavedJobPosting> {
+  const { data } = await api.patch<SavedJobPosting>(`/api/job-postings/${id}`, fields);
+  return data;
+}
+
 export async function deleteJobPosting(id: string): Promise<void> {
   await api.delete(`/api/job-postings/${id}`);
 }
@@ -89,6 +97,19 @@ export async function createCoverLetter(
   return data;
 }
 
+export async function updateCoverLetter(
+  id: string,
+  fields: { title?: string; items?: AnalyzeItemInput[] },
+): Promise<SavedCoverLetter> {
+  const { data } = await api.patch<SavedCoverLetter>(`/api/cover-letters/${id}`, fields);
+  return data;
+}
+
 export async function deleteCoverLetter(id: string): Promise<void> {
   await api.delete(`/api/cover-letters/${id}`);
+}
+
+// ── 회원 탈퇴 ──
+export async function deleteAccount(): Promise<void> {
+  await api.delete("/api/account");
 }
