@@ -39,8 +39,9 @@ export default function Landing() {
           <span className="text-brand-accent">내 자소서엔 빠진 부분은?</span>
         </h1>
         <p className="max-w-xl text-lg leading-relaxed text-muted">
-          채용공고와 자소서를 의미 단위로 맞대어, 무엇이 충족됐고 무엇이 빠졌는지
-          한눈에 보여드립니다.
+          채용공고와 자소서를 의미 단위로 맞대어,
+          <br />
+          무엇이 충족됐고 무엇이 빠졌는지 한눈에 보여드립니다.
         </p>
         <div className="mt-2 flex flex-col items-center gap-2">
           <Button onClick={() => navigate("/analyze")}>진단 시작하기</Button>
