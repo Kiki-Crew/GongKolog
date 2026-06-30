@@ -19,8 +19,8 @@ export default function Logo({
     >
       <defs>
         <linearGradient id="gkLogoGradient" x1="40" y1="20" x2="260" y2="260">
-          <stop offset="0%" stopColor="#A78BFF" />
-          <stop offset="100%" stopColor="#5B2FE0" />
+          <stop offset="0%" stopColor="#7F77DD" />
+          <stop offset="100%" stopColor="#453B98" />
         </linearGradient>
       </defs>
 
@@ -50,9 +50,9 @@ export default function Logo({
 
       {/* 문서 영역 */}
       <rect x="90" y="112" width="78" height="96" rx="16" fill="#F4F1FF" />
-      <rect x="108" y="138" width="34" height="7" rx="3.5" fill="#C7B8FF" />
-      <rect x="108" y="160" width="44" height="7" rx="3.5" fill="#C7B8FF" />
-      <rect x="108" y="182" width="28" height="7" rx="3.5" fill="#C7B8FF" />
+      <rect x="108" y="138" width="34" height="7" rx="3.5" fill="#B7AEEA" />
+      <rect x="108" y="160" width="44" height="7" rx="3.5" fill="#B7AEEA" />
+      <rect x="108" y="182" width="28" height="7" rx="3.5" fill="#B7AEEA" />
     </svg>
   );
 }
