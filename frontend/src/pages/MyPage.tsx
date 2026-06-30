@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
+import Logo from "../components/common/Logo";
 import Spinner from "../components/common/Spinner";
 import { useAuth, signOut } from "../hooks/useAuth";
 import {
@@ -90,6 +91,7 @@ export default function MyPage() {
   if (!session) {
     return (
       <div className="flex flex-col items-center gap-4 py-20">
+        <Logo size={88} />
         <p>로그인하면 자소서·공고 저장과 분석 기록을 볼 수 있습니다.</p>
         <GoogleLoginButton />
       </div>

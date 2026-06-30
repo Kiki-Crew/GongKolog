@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 
 import Button from "../components/common/Button";
+import Logo from "../components/common/Logo";
 
 function Legend({ color, label, desc }: { color: string; label: string; desc: string }) {
   return (
@@ -28,6 +29,7 @@ export default function Landing() {
     <div className="flex flex-col items-center gap-12 py-16 text-center">
       {/* 히어로 */}
       <div className="flex flex-col items-center gap-5">
+        <Logo size={112} />
         <span className="rounded-full border border-border px-3 py-1 text-sm text-muted">
           AI 자소서 진단
         </span>
