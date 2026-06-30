@@ -11,6 +11,8 @@ import {
   createJobPosting,
   listCoverLetters,
   listJobPostings,
+  updateCoverLetter,
+  updateJobPosting,
 } from "../lib/api";
 import type {
   AnalyzeItemInput,
@@ -51,10 +53,16 @@ export default function Analyze() {
 
   async function saveJob() {
     if (!jobPosting.trim()) return alert("저장할 공고 내용이 비어 있습니다.");
-    const title = window.prompt("공고 제목", "내 공고");
+    const title = window.prompt("공고 제목", "내 공고")?.trim();
     if (!title) return;
+    const dup = savedJobs.find((d) => d.title === title);
     try {
-      await createJobPosting(title, jobPosting);
+      if (dup) {
+        if (!window.confirm(`'${title}' 이름이 이미 있어요. 덮어쓸까요?`)) return;
+        await updateJobPosting(dup.id, { content: jobPosting });
+      } else {
+        await createJobPosting(title, jobPosting);
+      }
       reloadSaved();
       alert("공고를 저장했습니다.");
     } catch {
@@ -65,10 +73,16 @@ export default function Analyze() {
   async function saveLetter() {
     const valid = items.filter((it) => it.question.trim() && it.answer.trim());
     if (!valid.length) return alert("저장할 문항이 비어 있습니다.");
-    const title = window.prompt("자소서 제목", "내 자소서");
+    const title = window.prompt("자소서 제목", "내 자소서")?.trim();
     if (!title) return;
+    const dup = savedLetters.find((d) => d.title === title);
     try {
-      await createCoverLetter(title, valid);
+      if (dup) {
+        if (!window.confirm(`'${title}' 이름이 이미 있어요. 덮어쓸까요?`)) return;
+        await updateCoverLetter(dup.id, { items: valid });
+      } else {
+        await createCoverLetter(title, valid);
+      }
       reloadSaved();
       alert("자소서를 저장했습니다.");
     } catch {
@@ -121,6 +135,7 @@ export default function Analyze() {
           value={jobPosting}
           onChange={(e) => setJobPosting(e.target.value)}
         />
+        <span className="self-end text-xs text-muted">{jobPosting.length.toLocaleString()}자</span>
       </section>
 
       {/* 문항 반복 */}
@@ -170,6 +185,7 @@ export default function Analyze() {
               value={it.answer}
               onChange={(e) => update(i, "answer", e.target.value)}
             />
+            <span className="self-end text-xs text-muted">{it.answer.length.toLocaleString()}자</span>
           </div>
         ))}
         {items.length < MAX_ITEMS && (

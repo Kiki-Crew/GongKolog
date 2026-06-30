@@ -1,16 +1,19 @@
 // 마이페이지 — 저장한 자소서/공고, 분석 기록 (스펙 1.4 / 7.2 "/mypage")
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
 import Spinner from "../components/common/Spinner";
 import { useAuth, signOut } from "../hooks/useAuth";
 import {
+  deleteAccount,
   deleteCoverLetter,
   deleteJobPosting,
   listAnalyses,
   listCoverLetters,
   listJobPostings,
+  updateCoverLetter,
+  updateJobPosting,
 } from "../lib/api";
 import type {
   AnalysisHistoryItem,
@@ -20,6 +23,7 @@ import type {
 
 export default function MyPage() {
   const { session, loading } = useAuth();
+  const navigate = useNavigate();
   const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
   const [jobs, setJobs] = useState<SavedJobPosting[]>([]);
   const [letters, setLetters] = useState<SavedCoverLetter[]>([]);
@@ -38,6 +42,40 @@ export default function MyPage() {
   async function removeLetter(id: string) {
     await deleteCoverLetter(id);
     setLetters((prev) => prev.filter((d) => d.id !== id));
+  }
+
+  async function renameJob(d: SavedJobPosting) {
+    const title = window.prompt("새 이름", d.title)?.trim();
+    if (!title || title === d.title) return;
+    try {
+      await updateJobPosting(d.id, { title });
+      setJobs((prev) => prev.map((x) => (x.id === d.id ? { ...x, title } : x)));
+    } catch {
+      alert("같은 이름이 이미 있거나 수정에 실패했습니다.");
+    }
+  }
+  async function renameLetter(d: SavedCoverLetter) {
+    const title = window.prompt("새 이름", d.title)?.trim();
+    if (!title || title === d.title) return;
+    try {
+      await updateCoverLetter(d.id, { title });
+      setLetters((prev) => prev.map((x) => (x.id === d.id ? { ...x, title } : x)));
+    } catch {
+      alert("같은 이름이 이미 있거나 수정에 실패했습니다.");
+    }
+  }
+
+  async function onDeleteAccount() {
+    if (!window.confirm("정말 탈퇴하시겠어요? 저장된 자소서·공고·분석 기록이 모두 삭제됩니다.")) {
+      return;
+    }
+    try {
+      await deleteAccount();
+      await signOut();
+      navigate("/");
+    } catch {
+      alert("회원 탈퇴에 실패했습니다.");
+    }
   }
 
   if (loading) return <Spinner />;
@@ -92,9 +130,14 @@ export default function MyPage() {
               className="flex items-center justify-between rounded-lg bg-surface p-3 ring-1 ring-border"
             >
               <span>{d.title}</span>
-              <button onClick={() => removeJob(d.id)} className="text-sm text-muted hover:text-missing">
-                삭제
-              </button>
+              <span className="flex gap-3 text-sm text-muted">
+                <button onClick={() => renameJob(d)} className="hover:text-fg">
+                  이름 수정
+                </button>
+                <button onClick={() => removeJob(d.id)} className="hover:text-missing">
+                  삭제
+                </button>
+              </span>
             </li>
           ))}
           {jobs.length === 0 && (
@@ -116,15 +159,30 @@ export default function MyPage() {
                 {d.title}{" "}
                 <span className="text-sm text-muted">({d.items?.length ?? 0}문항)</span>
               </span>
-              <button onClick={() => removeLetter(d.id)} className="text-sm text-muted hover:text-missing">
-                삭제
-              </button>
+              <span className="flex gap-3 text-sm text-muted">
+                <button onClick={() => renameLetter(d)} className="hover:text-fg">
+                  이름 수정
+                </button>
+                <button onClick={() => removeLetter(d.id)} className="hover:text-missing">
+                  삭제
+                </button>
+              </span>
             </li>
           ))}
           {letters.length === 0 && (
             <p className="text-muted">저장한 자소서가 없습니다. 분석 화면에서 저장할 수 있어요.</p>
           )}
         </ul>
+      </section>
+
+      {/* 회원 탈퇴 */}
+      <section className="mt-4 border-t border-border pt-6">
+        <button
+          onClick={onDeleteAccount}
+          className="text-sm text-muted hover:text-missing"
+        >
+          회원 탈퇴
+        </button>
       </section>
     </div>
   );

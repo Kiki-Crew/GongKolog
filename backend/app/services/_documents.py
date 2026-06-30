@@ -26,6 +26,32 @@ def create_doc(table: str, user_id: str, title: str, content: str) -> dict:
     return res.data[0]
 
 
+def update_doc(table: str, user_id: str, doc_id: str, fields: dict) -> dict | None:
+    """본인 소유면 fields로 수정 후 row 반환, 없으면 None."""
+    owned = (
+        get_supabase().table(table).select("id").eq("id", doc_id).eq("user_id", user_id).execute()
+    )
+    if not owned.data:
+        return None
+    res = (
+        get_supabase()
+        .table(table)
+        .update(fields)
+        .eq("id", doc_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    return res.data[0] if res.data else None
+
+
+def name_exists(table: str, user_id: str, title: str, exclude_id: str | None = None) -> bool:
+    """같은 사용자 안에 같은 title이 이미 있는지 (수정 시 자기 자신은 제외)."""
+    q = get_supabase().table(table).select("id").eq("user_id", user_id).eq("title", title)
+    res = q.execute()
+    rows = [r for r in res.data if r["id"] != exclude_id]
+    return len(rows) > 0
+
+
 def delete_doc(table: str, user_id: str, doc_id: str) -> bool:
     """본인 소유면 삭제 후 True, 없으면 False."""
     owned = (
