@@ -19,8 +19,8 @@ export default function Logo({
     >
       <defs>
         <linearGradient id="gkLogoGradient" x1="40" y1="20" x2="260" y2="260">
-          <stop offset="0%" stopColor="#7F77DD" />
-          <stop offset="100%" stopColor="#534AB7" />
+          <stop offset="0%" stopColor="#A78BFF" />
+          <stop offset="100%" stopColor="#5B2FE0" />
         </linearGradient>
       </defs>
 
@@ -49,16 +49,10 @@ export default function Logo({
       />
 
       {/* 문서 영역 */}
-      <path
-        d="M62 104C62 98 67 93 73 93H128V182H73C67 182 62 177 62 171V104Z"
-        fill="#F4F1FF"
-      />
-      <rect x="80" y="118" width="32" height="6" rx="3" fill="#B7AEEA" />
-      <rect x="80" y="140" width="40" height="6" rx="3" fill="#B7AEEA" />
-      <rect x="80" y="162" width="28" height="6" rx="3" fill="#B7AEEA" />
-
-      {/* 연결 포인트 */}
-      <rect x="175" y="150" width="45" height="20" rx="10" fill="#7F77DD" opacity="0.3" />
+      <rect x="90" y="112" width="78" height="96" rx="16" fill="#F4F1FF" />
+      <rect x="108" y="138" width="34" height="7" rx="3.5" fill="#C7B8FF" />
+      <rect x="108" y="160" width="44" height="7" rx="3.5" fill="#C7B8FF" />
+      <rect x="108" y="182" width="28" height="7" rx="3.5" fill="#C7B8FF" />
     </svg>
   );
 }
