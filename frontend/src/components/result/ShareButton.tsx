@@ -21,7 +21,7 @@ export default function ShareButton({ id }: { id: string }) {
       onClick={copy}
       className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-brand/10"
     >
-      {copied ? "✅ 복사됨" : "🔗 공유 링크 복사"}
+      {copied ? "복사됨" : "공유 링크 복사"}
     </button>
   );
 }

@@ -43,7 +43,12 @@ export default function CategoryCard({ category: c, active, onClick }: Props) {
       </div>
       <p className="mt-1 text-xs text-muted">{c.criteria}</p>
       <p className="mt-1 text-sm text-fg/80">{c.comment}</p>
-      {c.suggestion && <p className="mt-1 text-sm text-weak">💡 {c.suggestion}</p>}
+      {c.suggestion && (
+        <p className="mt-1 text-sm text-weak">
+          <span className="font-medium">보완 </span>
+          {c.suggestion}
+        </p>
+      )}
     </button>
   );
 }

@@ -103,13 +103,13 @@ export default function Analyze() {
                   if (doc) setJobPosting(doc.content);
                 }}
               >
-                <option value="">📁 저장한 공고 불러오기</option>
+                <option value="">저장한 공고 불러오기</option>
                 {savedJobs.map((d) => (
                   <option key={d.id} value={d.id}>{d.title}</option>
                 ))}
               </select>
               <button onClick={saveJob} className="text-brand-accent hover:underline">
-                💾 저장
+                저장
               </button>
             </div>
           )}
@@ -137,13 +137,13 @@ export default function Analyze() {
                   if (doc && doc.items?.length) setItems(doc.items.map((x) => ({ ...x })));
                 }}
               >
-                <option value="">📁 저장한 자소서 불러오기</option>
+                <option value="">저장한 자소서 불러오기</option>
                 {savedLetters.map((d) => (
                   <option key={d.id} value={d.id}>{d.title}</option>
                 ))}
               </select>
               <button onClick={saveLetter} className="text-brand-accent hover:underline">
-                💾 저장
+                저장
               </button>
             </div>
           )}
