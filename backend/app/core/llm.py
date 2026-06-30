@@ -51,7 +51,10 @@ def _call_once(prompt: str, provider: str) -> str:
         resp = _gemini_client().models.generate_content(
             model=settings.gemini_model,
             contents=prompt,
-            config={"response_mime_type": "application/json"},
+            config={
+                "response_mime_type": "application/json",
+                "temperature": 0.2, # 일관성 유지 용도
+            },
         )
         return resp.text
     elif provider == "groq":
@@ -60,6 +63,7 @@ def _call_once(prompt: str, provider: str) -> str:
             model=settings.groq_model,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
+            temperature=0.2,
         )
         return resp.choices[0].message.content
     raise ValueError(provider)

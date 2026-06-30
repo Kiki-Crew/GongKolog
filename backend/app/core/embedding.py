@@ -29,14 +29,14 @@ def embed(texts: list[str]):
     # 정규화 → 내적 = 코사인 유사도
     return get_model().encode(texts, normalize_embeddings=True)
 
-def _build_retrieval_queries(category: dict) -> list[str]:
+def _build_retrieval_queries(category: dict) -> list[dict]:
     """
     카테고리 하나를 여러 관점의 검색 질문으로 확장합니다.
 
-    이유:
-    - criteria 하나만 임베딩하면 비슷한 문장만 반복해서 뽑힙니다.
-    - 경험 배경, 본인 행동, 방법, 결과, 배운 점/직무 연결을 나누어 찾으면
-      특정 직무 키워드 규칙 없이도 전 분야 자소서에 비교적 안정적으로 대응할 수 있습니다.
+    수정 이유:
+    - 기존에는 여러 검색 질문을 만들었지만, judge 단계에서는 어떤 이유로 뽑힌 근거인지 사라졌습니다.
+    - role을 함께 보존하면 LLM이 후보 근거를 사람 분석관처럼
+      '상황', '행동', '방법', '결과/적용'으로 나누어 읽을 수 있습니다.
     """
     category_name = category.get("category", "")
     criteria = category.get("criteria", "")
@@ -45,11 +45,26 @@ def _build_retrieval_queries(category: dict) -> list[str]:
     base = f"{category_name}. {criteria}. {job_signals}".strip()
 
     return [
-        base,
-        f"{base}와 관련된 경험의 배경, 문제 상황, 목표",
-        f"{base}와 관련된 본인 행동, 수행 과정, 판단 과정",
-        f"{base}와 관련된 사용 방법, 자료 활용, 분석 또는 실행 방식",
-        f"{base}와 관련된 결과, 변화, 배운 점, 직무 적용 방향",
+        {
+            "role": "카테고리 직접 근거",
+            "text": base,
+        },
+        {
+            "role": "상황·문제의식·목표",
+            "text": f"{base}와 관련된 경험의 배경, 문제 상황, 목표, 지원 계기, 고객 또는 서비스 문제의식",
+        },
+        {
+            "role": "본인 행동·판단 과정",
+            "text": f"{base}와 관련된 본인 행동, 수행 과정, 판단 과정, 역할, 의사결정",
+        },
+        {
+            "role": "방법·자료·도구 활용",
+            "text": f"{base}와 관련된 사용 방법, 자료 활용, 데이터 처리, 분석 또는 실행 방식",
+        },
+        {
+            "role": "결과·배운 점·적용 방향",
+            "text": f"{base}와 관련된 결과, 변화, 배운 점, 인사이트, 입사 후 적용 방향",
+        },
     ]
 
 
@@ -92,14 +107,14 @@ def _has_too_much_overlap(ids: list[str], used_ids: set[str], limit: float = 0.5
     return overlap_ratio >= limit
 
 
-def _select_diverse_windows(sim, windows: list[dict], top_k: int) -> list[dict]:
+def _select_diverse_windows(sim, windows: list[dict], queries: list[dict], top_k: int) -> list[dict]:
     """
     여러 검색 질문별로 후보 윈도우를 고르게 선택합니다.
 
-    구성:
-    1. 각 검색 질문마다 가장 적절한 후보를 우선 선택합니다.
-    2. 이미 선택된 후보와 많이 겹치는 후보는 건너뜁니다.
-    3. 부족하면 전체 점수 기준으로 다시 채웁니다.
+    수정 이유:
+    - 단순히 문장만 고르면 LLM이 근거의 역할을 다시 추론해야 합니다.
+    - 어떤 관점에서 뽑힌 후보인지 role을 함께 넘기면
+      judge 단계에서 더 구조적으로 판단할 수 있습니다.
     """
     import numpy as np
 
@@ -112,6 +127,7 @@ def _select_diverse_windows(sim, windows: list[dict], top_k: int) -> list[dict]:
     # 1) 검색 질문별로 하나씩 먼저 선택합니다.
     for q_idx in range(query_count):
         order = np.argsort(sim[q_idx])[::-1]
+        query = queries[q_idx]
 
         for w_idx in order:
             window = windows[w_idx]
@@ -126,6 +142,8 @@ def _select_diverse_windows(sim, windows: list[dict], top_k: int) -> list[dict]:
             selected.append({
                 "window": window,
                 "score": float(sim[q_idx][w_idx]),
+                "role": query["role"],
+                "query_text": query["text"],
             })
             used_ids.update(ids)
             selected_window_indexes.add(w_idx)
@@ -148,9 +166,14 @@ def _select_diverse_windows(sim, windows: list[dict], top_k: int) -> list[dict]:
         if _has_too_much_overlap(ids, used_ids):
             continue
 
+        best_q_idx = int(sim[:, w_idx].argmax())
+        best_query = queries[best_q_idx]
+
         selected.append({
             "window": window,
             "score": float(max_scores[w_idx]),
+            "role": best_query["role"],
+            "query_text": best_query["text"],
         })
         used_ids.update(ids)
         selected_window_indexes.add(w_idx)
@@ -185,24 +208,25 @@ def find_candidates(categories: list[dict], sentences: list[dict], top_k: int = 
 
     for category in categories:
         queries = _build_retrieval_queries(category)
-        query_vecs = embed(queries)
+        query_vecs = embed([q["text"] for q in queries])
 
         # shape: (검색 질문 수, 윈도우 수)
         sim = query_vecs @ window_vecs.T
-
-        selected = _select_diverse_windows(sim, windows, top_k)
+        selected = _select_diverse_windows(sim, windows, queries, top_k)
 
         candidates[category["id"]] = [
             {
-                # 기존 judge.py와 mock 구조를 크게 깨지 않기 위해 대표 문장은 유지합니다.
+                # 기존 구조 유지용 대표 문장입니다.
                 "sentence": item["window"]["sentences"][0],
 
-                # 실제 판정 입력에는 이 context_sentences를 사용합니다.
+                # 실제 판정 입력에는 이 문맥을 사용합니다.
                 "context_sentences": item["window"]["sentences"],
 
-                # evidence_ids 검증이나 디버깅에 쓸 수 있습니다.
-                "source_ids": item["window"]["ids"],
+                # 어떤 관점에서 선택된 근거인지 judge.py에 전달합니다.
+                "role": item["role"],
 
+                # 디버깅용입니다. 프론트에는 보낼 필요 없습니다.
+                "source_ids": item["window"]["ids"],
                 "score": item["score"],
             }
             for item in selected

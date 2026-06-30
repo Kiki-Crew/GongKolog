@@ -43,13 +43,14 @@ def build_judge_input(categories: list[dict], candidates: dict) -> str:
             lines.append("판정용 답변 근거:")
 
             for item in cand:
+                role = item.get("role", "근거") # 추가
                 context_sentences = item.get("context_sentences") or [item["sentence"]]
 
                 context_text = " ".join(
                     f'{s["id"]}: {s["text"]}' for s in context_sentences
                 )
 
-                lines.append(f"- {context_text}")
+                lines.append(f"- [{role}] {context_text}")
         else:
             lines.append("판정용 답변 근거: 없음")
 
