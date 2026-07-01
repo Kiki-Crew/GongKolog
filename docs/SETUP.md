@@ -1,4 +1,4 @@
-# GongKolog 셋업 가이드
+﻿# GongKolog 셋업 가이드
 
 분석→결과까지는 키만 있으면 되고, 저장·공유·마이페이지는 Supabase + Google OAuth가 필요하다.
 
@@ -31,6 +31,9 @@ GROQ_EXTRACT_BACKUP_MODEL=openai/gpt-oss-120b
 
 GROQ_JUDGE_PRIMARY_MODEL=openai/gpt-oss-120b
 GROQ_JUDGE_BACKUP_MODEL=llama-3.3-70b-versatile
+
+GROQ_JOB_CONTEXT_PRIMARY_MODEL=qwen/qwen3-32b
+GROQ_JOB_CONTEXT_BACKUP_MODEL=llama-3.3-70b-versatile
 
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=...      # service_role (secret, 절대 노출 금지)
@@ -80,7 +83,30 @@ VITE_SUPABASE_ANON_KEY=...         # anon public 키
 
 ---
 
-## 4. 실행
+## 4. LLM 사용량/한도 처리
+
+Groq API는 조직/API 키/모델/서비스 티어 기준으로 토큰 한도가 적용됨.
+organization 한도에 걸린 상태에서 백업 모델을 계속 호출하면 실패 로그와 불필요한 요청만 늘어날 수 있고,
+분석 중 일일 토큰 한도(TPD/RPD)에 도달하면 백업 모델로 넘기지 않고 분석을 중단함. 
+
+사용자 화면에는 공급자명, HTTP 상태 코드, 원본 API 오류를 노출하지 않습니다. 일일 토큰 한도 초과 시에는 아래 문구만 표시하도록 작성함.
+
+```text
+하루에 사용 가능한 토큰 개수를 모두 소진했습니다.
+```
+
+그리고 상세 원인은 서버 로그에서 확인하도록 했음.
+
+```text
+[LLM 일일 한도 초과] wait_seconds=... header_wait_seconds=... rate_limit_headers=... error=...
+[ANALYZE ERROR] status=429 error=...
+```
+
+성공한 LLM 호출은 서버 로그에 `[LLM 사용량] ... total_tokens=...` 형태로 기록됩니다. 이 값은 해당 호출에서 사용한 토큰 수이며, 남은 일일 토큰 수를 정확히 계산하는 값은 아닙니다. 남은 한도는 Groq 서버가 조직/모델/시간창/동시 요청 기준으로 판단하므로, 한도 초과 시 서버 로그의 `error=` 원본 오류 메시지나 `rate_limit_headers=`에 값이 제공될 때만 참고값으로 확인합니다.
+
+---
+
+## 5. 실행
 
 ```bash
 # 백엔드
@@ -91,7 +117,7 @@ cd frontend && npm run dev      # http://localhost:5173
 
 ---
 
-## 5. 검증 순서
+## 6. 검증 순서
 
 1. **비로그인 분석**: `/analyze` → 진단 → 결과 화면. (저장 안 됨 = 새로고침하면 사라짐. 정상)
 2. **로그인**: 마이페이지 → Google 로그인 → 돌아오면 세션 유지.
