@@ -1,0 +1,44 @@
+flowchart LR
+  User(["사용자<br/>브라우저"])
+
+  subgraph FE["Frontend · React·Vite·Tailwind"]
+    Pages["화면<br/>랜딩 / 분석 / 결과<br/>마이페이지 / 공유"]
+  end
+
+  subgraph BE["Backend · FastAPI"]
+    direction TB
+    API["API 라우터<br/>analyze · analyses<br/>cover-letters · job-postings · account"]
+    JWTV["JWT 검증<br/>(JWKS)"]
+    subgraph ENG["분석 엔진 (파이프라인)"]
+      direction TB
+      E1["① 평가 카테고리 추출"]
+      E2["② 문장 분리 · KSS"]
+      E3["③ 임베딩 후보 검색 · BGE-M3"]
+      E4["④ 충족 판정 · 3색"]
+      E5["⑤ 결과 조립"]
+      E1 --> E2 --> E3 --> E4 --> E5
+    end
+    API --> JWTV
+    API --> E1
+  end
+
+  subgraph LLM["Groq API · 멀티 LLM + 폴백"]
+    direction TB
+    Llama["Llama-3.3-70B<br/>추출"]
+    GptOss["GPT-OSS-120B<br/>판정"]
+  end
+
+  subgraph SB["Supabase"]
+    direction TB
+    Auth["Auth<br/>Google OAuth"]
+    DB[("PostgreSQL · RLS<br/>profiles · cover_letters<br/>job_postings · analyses")]
+  end
+
+  User --> Pages
+  Pages -->|"① 로그인 (OAuth 직통)"| Auth
+  Pages -->|"② API 요청 + JWT"| API
+  JWTV -. "공개키(JWKS) 검증" .-> Auth
+  E1 -->|추출| Llama
+  E4 -->|판정| GptOss
+  E5 -->|"결과 저장·조회<br/>(service_role)"| DB
+  E5 -->|"③ 3색 진단 응답"| Pages
