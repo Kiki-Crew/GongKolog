@@ -24,9 +24,13 @@ Supabase → **Project Settings → API** 에서 값 복사.
 
 ### backend/.env
 ```
-GEMINI_API_KEY=...
 GROQ_API_KEY=...
-GROQ_MODEL=qwen/qwen3-32b
+
+GROQ_EXTRACT_PRIMARY_MODEL=llama-3.3-70b-versatile
+GROQ_EXTRACT_BACKUP_MODEL=openai/gpt-oss-120b
+
+GROQ_JUDGE_PRIMARY_MODEL=openai/gpt-oss-120b
+GROQ_JUDGE_BACKUP_MODEL=llama-3.3-70b-versatile
 
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=...      # service_role (secret, 절대 노출 금지)

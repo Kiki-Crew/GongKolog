@@ -1,24 +1,38 @@
-"""파싱 헬퍼 (스펙 4.4 5단계)."""
+"""파싱 헬퍼"""
 import json
 
 
 def safe_json(text: str):
-    """LLM 응답에서 코드펜스 제거 후 JSON 파싱."""
-    text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```")
+    """LLM 응답에서 코드펜스 제거 후 JSON 파싱"""
+    text = text.strip()
+
+    if text.startswith("```json"):
+        text = text.removeprefix("```json").strip()
+    elif text.startswith("```"):
+        text = text.removeprefix("```").strip()
+
+    if text.endswith("```"):
+        text = text.removesuffix("```").strip()
+
     return json.loads(text)
 
 
-def coerce_list(parsed) -> list:
-    """LLM이 배열 대신 객체로 감싸 반환해도 내부 리스트를 꺼낸다.
-
-    예) {"categories": [...]}, {"results": [...]} → [...]
-    (Groq json_object 모드는 최상위가 객체여야 하므로 흔히 발생)
-    리스트면 그대로, 못 찾으면 빈 리스트.
+def coerce_list(parsed, preferred_key: str | None = None) -> list:
+    """
+    LLM이 반환한 JSON에서 리스트를 꺼냄 (배열 바로 온 경우도 유지/다른 키로 감싸져도 첫번째 리스트 꺼내게)
+    {"categories": [...]} 또는 {"judgments": [...]} 같은 응답 처리
     """
     if isinstance(parsed, list):
         return parsed
-    if isinstance(parsed, dict):
-        for v in parsed.values():
-            if isinstance(v, list):
-                return v
+
+    if not isinstance(parsed, dict):
+        return []
+
+    if preferred_key and isinstance(parsed.get(preferred_key), list):
+        return parsed[preferred_key]
+
+    for value in parsed.values():
+        if isinstance(value, list):
+            return value
+
     return []

@@ -1,4 +1,4 @@
-// 입력·분석 (스펙 v2 5장) — 공고(필수) + 문항 반복(최대 5)
+﻿// 입력·분석 (스펙 v2 5장) — 공고(필수) + 문항 반복(최대 5)
 // 로그인 사용자는 저장한 공고/자소서를 불러오거나 새로 저장할 수 있다 (Tier 3).
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,13 +22,56 @@ import type {
 
 const MAX_ITEMS = 5;
 const EMPTY: AnalyzeItemInput = { question: "", answer: "" };
+const DRAFT_KEY = "gongkolog:analyze-draft";
+
+interface AnalyzeDraft {
+  jobPosting: string;
+  items: AnalyzeItemInput[];
+}
+
+function normalizeItems(value: unknown): AnalyzeItemInput[] {
+  if (!Array.isArray(value)) return [{ ...EMPTY }];
+
+  const normalized = value.slice(0, MAX_ITEMS).map((item) => {
+    const draftItem = item as Partial<AnalyzeItemInput>;
+
+    return {
+      question: typeof draftItem.question === "string" ? draftItem.question : "",
+      answer: typeof draftItem.answer === "string" ? draftItem.answer : "",
+    };
+  });
+
+  return normalized.length ? normalized : [{ ...EMPTY }];
+}
+
+function readDraft(): AnalyzeDraft {
+  if (typeof window === "undefined") {
+    return { jobPosting: "", items: [{ ...EMPTY }] };
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return { jobPosting: "", items: [{ ...EMPTY }] };
+
+    const draft = JSON.parse(raw) as { jobPosting?: unknown; items?: unknown };
+
+    return {
+      jobPosting: typeof draft.jobPosting === "string" ? draft.jobPosting : "",
+      items: normalizeItems(draft.items),
+    };
+  } catch {
+    return { jobPosting: "", items: [{ ...EMPTY }] };
+  }
+}
 
 export default function Analyze() {
   const { session } = useAuth();
-  const [jobPosting, setJobPosting] = useState("");
-  const [items, setItems] = useState<AnalyzeItemInput[]>([{ ...EMPTY }]);
-  const { run, loading, error } = useAnalyze();
+  const [initialDraft] = useState(readDraft);
+  const [jobPosting, setJobPosting] = useState(initialDraft.jobPosting);
+  const [items, setItems] = useState<AnalyzeItemInput[]>(initialDraft.items);
+  const { run, loading, error, blockReason, resetBlock } = useAnalyze();
   const navigate = useNavigate();
+  const analyzeBlocked = Boolean(blockReason);
 
   // 저장된 공고/자소서 (로그인 시)
   const [savedJobs, setSavedJobs] = useState<SavedJobPosting[]>([]);
@@ -41,13 +84,20 @@ export default function Analyze() {
   }
   useEffect(reloadSaved, [session]);
 
+  useEffect(() => {
+    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ jobPosting, items }));
+  }, [jobPosting, items]);
+
   function update(i: number, field: keyof AnalyzeItemInput, value: string) {
+    resetBlock();
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)));
   }
   function addItem() {
+    resetBlock();
     setItems((prev) => (prev.length < MAX_ITEMS ? [...prev, { ...EMPTY }] : prev));
   }
   function removeItem(i: number) {
+    resetBlock();
     setItems((prev) => prev.filter((_, idx) => idx !== i));
   }
 
@@ -91,6 +141,7 @@ export default function Analyze() {
   }
 
   async function onSubmit() {
+    if (analyzeBlocked) return;
     const result = await run(jobPosting, items);
     if (result) {
       navigate(`/result/${result.analysis_id}`, { state: result });
@@ -114,7 +165,10 @@ export default function Analyze() {
                 value=""
                 onChange={(e) => {
                   const doc = savedJobs.find((d) => d.id === e.target.value);
-                  if (doc) setJobPosting(doc.content);
+                  if (doc) {
+                    resetBlock();
+                    setJobPosting(doc.content);
+                  }
                 }}
               >
                 <option value="">저장한 공고 불러오기</option>
@@ -133,7 +187,10 @@ export default function Analyze() {
           className="h-40 rounded-lg bg-surface p-3 ring-1 ring-border"
           placeholder="채용공고 원문을 붙여넣으세요"
           value={jobPosting}
-          onChange={(e) => setJobPosting(e.target.value)}
+          onChange={(e) => {
+            resetBlock();
+            setJobPosting(e.target.value);
+          }}
         />
         <span className="self-end text-xs text-muted">{jobPosting.length.toLocaleString()}자</span>
       </section>
@@ -149,7 +206,10 @@ export default function Analyze() {
                 value=""
                 onChange={(e) => {
                   const doc = savedLetters.find((d) => d.id === e.target.value);
-                  if (doc && doc.items?.length) setItems(doc.items.map((x) => ({ ...x })));
+                  if (doc && doc.items?.length) {
+                    resetBlock();
+                    setItems(doc.items.map((x) => ({ ...x })));
+                  }
                 }}
               >
                 <option value="">저장한 자소서 불러오기</option>
@@ -199,8 +259,8 @@ export default function Analyze() {
       </section>
 
       {error && <p className="text-missing">{error}</p>}
-      <Button onClick={onSubmit} disabled={loading} className="self-start">
-        {loading ? "분석 중..." : "진단하기"}
+      <Button onClick={onSubmit} disabled={loading || analyzeBlocked} className="self-start">
+        {loading ? "분석 중..." : analyzeBlocked ? "진단 불가" : "진단하기"}
       </Button>
       {!session && (
         <p className="text-sm text-muted">

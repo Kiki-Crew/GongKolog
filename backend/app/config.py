@@ -1,16 +1,23 @@
-"""환경변수 설정. .env 로딩 (스펙 5.3 / 6장)."""
+﻿"""환경변수 설정(.env 로딩)"""
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # LLM
-    gemini_api_key: str = ""
+    # LLM - Groq만 사용 (extract / judge 각각 다른 모델 사용)
     groq_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
-    # Groq 모델은 수시로 폐기됨 → https://console.groq.com/docs/models 에서 현재 ID 확인.
-    groq_model: str = "qwen/qwen3-32b"
+
+    # 단계별 모델 분리
+    groq_extract_primary_model: str = "llama-3.3-70b-versatile"
+    groq_extract_backup_model: str = "openai/gpt-oss-120b" # 백업
+
+    groq_judge_primary_model: str = "openai/gpt-oss-120b"
+    groq_judge_backup_model: str = "llama-3.3-70b-versatile" # 백업
+
+    # 채용공고 원문을 문항별 분석용 직무 컨텍스트로 1회 구조화
+    groq_job_context_primary_model: str = "qwen/qwen3-32b"
+    groq_job_context_backup_model: str = "openai/gpt-oss-120b"
 
     # Supabase
     supabase_url: str = ""
@@ -21,7 +28,7 @@ class Settings(BaseSettings):
     embed_model: str = "BAAI/bge-m3"
     embed_device: str = "cpu"
 
-    # Mock 모드 (키/모델 없이 파이프라인 검증용 — 스펙 8장 Tier 1)
+    # Mock 모드
     #   MOCK_LLM=true       → LLM 호출 대신 규칙 기반 가짜 추출/판정
     #   MOCK_EMBEDDING=true → BGE-M3 대신 문자 n-gram Jaccard 유사도
     mock_llm: bool = False
@@ -32,3 +39,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+

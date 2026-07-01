@@ -2,14 +2,18 @@
 
 엔드포인트 정의만. 분석 로직은 core, 저장/조회는 services로 위임.
 """
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import optional_user, require_user
+from app.core.llm import LLMDailyTokenLimitError, LLMRequestTooLargeError
 from app.core.pipeline import analyze
 from app.schemas.analysis import AnalyzeRequest, AnalyzeResponse
 from app.services import analyses as analyses_service
 
 router = APIRouter(prefix="/api", tags=["analyze"])
+logger = logging.getLogger(__name__)
 
 MAX_ITEMS = 5  # 문항 상한 (LLM 2N 호출 → 무료 한도 보호, 스펙 v2 TODO)
 
@@ -33,6 +37,12 @@ def run_analyze(req: AnalyzeRequest, user_id: str | None = Depends(optional_user
 
     try:
         result = analyze(req.job_posting, [it.model_dump() for it in req.items])
+    except LLMDailyTokenLimitError as e:
+        logger.warning("[ANALYZE ERROR] status=429 error=%s", e)
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, str(e))
+    except LLMRequestTooLargeError as e:
+        logger.warning("[ANALYZE ERROR] status=413 error=%s", e)
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(e))
     except Exception as e:  # LLM/임베딩 실패
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"분석 실패: {e}")
 

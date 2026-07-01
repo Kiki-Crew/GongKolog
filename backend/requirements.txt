@@ -7,7 +7,6 @@ pydantic-settings
 python-dotenv
 sentence-transformers   # BGE-M3
 kss                     # 한국어 문장 분리
-google-genai            # Gemini SDK
 openai                  # Groq (OpenAI 호환 SDK)
 supabase                # supabase-py
 PyJWT                   # Supabase JWT 검증
