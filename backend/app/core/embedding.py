@@ -60,7 +60,7 @@ def _build_retrieval_queries(category: dict) -> list[dict]:
     ]
 
 
-def _make_sentence_windows(sentences: list[dict], window_size: int = 2) -> list[dict]:
+def _make_sentence_windows(sentences: list[dict], window_size: int = 3) -> list[dict]:
     """
     인접 문장을 묶어 임베딩 검색 단위로 생성
     -> 자소서는 한 문장만으로 의미가 완결되지 않는 경우가 많음
