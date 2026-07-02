@@ -7,14 +7,6 @@ export interface Sentence {
   text: string;
 }
 
-export interface ConditionCheck {
-  condition: string;
-  fulfilled: boolean;
-  evidence_ids: string[];
-  evidence_terms?: string[];
-  reason?: string;
-}
-
 export interface Category {
   id: string;
   category: string;
@@ -22,19 +14,7 @@ export interface Category {
   criteria: string;
   status: Status;
   evidence_ids: string[]; // 같은 item 내 답변 문장 id만 유효 (스코프 분리)
-
-  // 답변 근거 문장에서 뽑은 핵심 표현
-  evidence_terms?: string[];
-
-  // 카드 상단에 짧게 보여줄 평가 요약
   comment: string;
-
-  // comment보다 긴 상세 분석
-  analysis?: string | null;
-
-  // 추후 condition_checks 기반 판정으로 확장할 때 사용
-  condition_checks?: ConditionCheck[];
-
   suggestion?: string | null;
 }
 
